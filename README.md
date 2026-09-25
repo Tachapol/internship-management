@@ -416,6 +416,8 @@ Base URL: `http://localhost:4000/api`
 
 ## Architecture
 
+> For comprehensive system architecture, API specifications, security models, and data flows, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ```
                     Frontend (Next.js)
     Pages -> Components -> API Client -> Auth Context
