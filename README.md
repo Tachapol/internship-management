@@ -27,6 +27,7 @@ This is a Turborepo-managed monorepo with npm workspaces:
 internship-management/
 ├── apps/
 │   ├── api/                         # NestJS REST API (port 4000)
+│   │   ├── api/                     # Vercel Serverless entrypoint (index.ts)
 │   │   ├── src/
 │   │   │   ├── auth/                # JWT authentication + guards
 │   │   │   ├── users/               # User CRUD
@@ -36,6 +37,7 @@ internship-management/
 │   │   │   ├── attendance/          # Check-in/out + monthly reports
 │   │   │   ├── leave-requests/      # Leave submission and approval
 │   │   │   ├── training-plans/      # Training programs and modules
+│   │   │   ├── events/              # Company & system events / announcements
 │   │   │   ├── dashboard/           # Role-based statistics
 │   │   │   ├── notifications/       # In-app notifications
 │   │   │   ├── audit-logs/          # Immutable audit trail
@@ -45,6 +47,7 @@ internship-management/
 │   │   │   ├── prisma/              # Database connection
 │   │   │   ├── app.module.ts        # Root module (imports all)
 │   │   │   └── main.ts              # Bootstrap (Swagger, CORS, validation)
+│   │   ├── vercel.json              # Vercel deployment configuration
 │   │   └── package.json
 │   │
 │   └── web/                         # Next.js 15 SSR Frontend (port 3000)
@@ -54,10 +57,12 @@ internship-management/
 │       │   │   ├── dashboard/       # Adaptive dashboard (per role)
 │       │   │   ├── companies/       # Company list and management
 │       │   │   ├── users/           # Intern management (+ detail view)
+│       │   │   ├── mentors/         # Mentor directory & student assignment
 │       │   │   ├── teams/           # Team management
 │       │   │   ├── attendance/      # Check-in/out + history
 │       │   │   ├── leave-requests/  # Leave requests
 │       │   │   ├── training-plans/  # Training plans
+│       │   │   ├── events/          # Events and announcements
 │       │   │   ├── notifications/   # Notification inbox
 │       │   │   ├── audit-logs/      # Audit log viewer
 │       │   │   ├── support-tickets/ # Support tickets
@@ -76,10 +81,13 @@ internship-management/
 │       │       └── utils.ts         # cn() helper, formatters
 │       └── package.json
 │
+├── docs/
+│   └── ARCHITECTURE.md              # Detailed system architecture & API design
+│
 ├── packages/
 │   ├── database/                    # Prisma schema, migrations, seed
 │   │   ├── prisma/
-│   │   │   ├── schema.prisma        # 15 models, 12 enums
+│   │   │   ├── schema.prisma        # 16 models, 12 enums
 │   │   │   └── seed.ts              # Sample data (4 users, attendance, leave, training)
 │   │   └── src/index.ts             # Re-export @prisma/client
 │   │
@@ -88,6 +96,7 @@ internship-management/
 │   ├── config-typescript/           # TSConfig base
 │   └── config-prettier/             # Prettier preset
 │
+├── scripts/                         # Maintenance and verification scripts
 ├── docker-compose.yml               # PostgreSQL 15 (port 5433)
 ├── turbo.json                       # Build pipeline config
 └── package.json                     # Root workspace definition
@@ -99,12 +108,13 @@ internship-management/
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | Next.js 15, React 19, Tailwind CSS, Radix UI, Lucide Icons |
+| **Frontend** | Next.js 15, React 19, Tailwind CSS, Radix UI, Lucide Icons, xlsx |
 | **Backend** | NestJS 10, Express, class-validator, Swagger/OpenAPI |
 | **Database** | PostgreSQL 15, Prisma ORM v5 |
 | **Authentication** | JWT (Access Token: 1 day, Refresh Token: 30 days, stored in DB) |
 | **File Storage** | Supabase Storage (with mock fallback for local development) |
 | **Email** | Resend (with console log fallback for local development) |
+| **Deployment** | Vercel (Frontend & Serverless API), Supabase Cloud (PostgreSQL & Storage) |
 | **Build Orchestration** | Turborepo + npm workspaces |
 
 ---
@@ -184,6 +194,23 @@ internship-management/
 - Priority levels: LOW, MEDIUM, HIGH
 - Categories: attendance, leave, training, other
 
+### Events & Announcements
+
+- Create and publish orientations, meetings, and workshops
+- Target audiences: Company-wide (`COMPANY`) or all interns across the organization (`ALL`)
+- Full schedule details: date/time, location, and description
+
+### Mentor Management & Intern Assignment
+
+- Centralized mentor directory for system administrators
+- Assign and unassign students to mentors via an intuitive modal workflow
+- Overview of mentor workload and assigned student capacity
+
+### Reporting & Data Export
+
+- Export attendance data and summaries directly to Microsoft Excel format (`.xlsx`)
+- Filterable monthly and daily attendance reports
+
 ### FAQ Page
 
 - Frequently asked questions for students
@@ -192,7 +219,7 @@ internship-management/
 
 ## Database Schema
 
-15 models, 12 enums:
+16 models, 12 enums:
 
 | Model | Description |
 |---|---|
@@ -211,6 +238,7 @@ internship-management/
 | `audit_logs` | Immutable action log (never deleted) |
 | `support_tickets` | User-submitted support requests |
 | `support_ticket_replies` | Threaded replies on tickets |
+| `events` | Company & system calendar events, workshops, and announcements |
 
 ---
 
@@ -406,6 +434,15 @@ Base URL: `http://localhost:4000/api`
 | PATCH | `/support-tickets/:id/status` | Update status | Staff only |
 | PATCH | `/support-tickets/:id/assign` | Assign ticket | Staff only |
 
+### Events
+
+| Method | Endpoint | Description | Role |
+|---|---|---|---|
+| GET | `/events` | Visible event list | All |
+| GET | `/events/:id` | Event details | All |
+| POST | `/events` | Create new event | ADMIN, BD_TEAM, MENTOR |
+| PATCH | `/events/:id` | Update event details | ADMIN, BD_TEAM, MENTOR |
+
 ### Dashboard
 
 | Method | Endpoint | Description | Role |
@@ -435,6 +472,7 @@ Base URL: `http://localhost:4000/api`
     |-- Attendance Module-> Check-in/out, Reports
     |-- Leave Requests   -> Submit, Approve, Reject
     |-- Training Plans   -> Create, Modules, Progress
+    |-- Events Module    -> Create, List, Audience Filter
     |-- Dashboard        -> Stats per Role
     |-- Notifications    -> Inbox, Mark Read
     |-- Audit Logs       -> Immutable trail
@@ -444,7 +482,7 @@ Base URL: `http://localhost:4000/api`
                         |
                         v
                 Database (PostgreSQL + Prisma)
-                15 Models, 12 Enums,
+                16 Models, 12 Enums,
                 Soft Deletes, Indexes
 ```
 

@@ -83,7 +83,7 @@ The system is architected as a **modular monorepo** using **Turborepo**, standar
                                         v                        v
                          +----------------------------+   +----------------------------+
                          |   PostgreSQL Database      |   |   External Cloud Services  |
-                         |   (15 Models, 12 Enums,    |   |   - Supabase Object Store  |
+                         |   (16 Models, 12 Enums,    |   |   - Supabase Object Store  |
                          |    Indexes, Foreign Keys)  |   |   - Resend Transactional   |
                          +----------------------------+   +----------------------------+
 ```
