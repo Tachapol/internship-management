@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Query, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { InvitationsService } from './invitations.service';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
@@ -25,9 +25,12 @@ export class InvitationsController {
   @ApiResponse({ status: 201, description: 'Invitation created and dispatched.' })
   async create(
     @Body() createInvitationDto: CreateInvitationDto,
-    @GetUser('id') userId: string,
+    @GetUser() currentUser: { id: string; role: UserRole },
   ) {
-    return this.invitationsService.createInvitation(createInvitationDto, userId);
+    if (currentUser.role === UserRole.BD_TEAM && createInvitationDto.role === UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('BD Team members cannot invite users as Super Admin');
+    }
+    return this.invitationsService.createInvitation(createInvitationDto, currentUser.id);
   }
 
   @Get('verify')

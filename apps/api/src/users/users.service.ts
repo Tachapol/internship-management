@@ -2,6 +2,35 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, UserRole, UserStatus } from 'database';
 
+export const USER_SAFE_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  phone: true,
+  avatarUrl: true,
+  role: true,
+  status: true,
+  companyId: true,
+  teamId: true,
+  mentorId: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  company: {
+    select: { id: true, name: true },
+  },
+  team: {
+    select: { id: true, name: true },
+  },
+  mentor: {
+    select: { id: true, name: true },
+  },
+  students: {
+    where: { deletedAt: null },
+    select: { id: true, name: true, email: true },
+  },
+} as const;
+
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
@@ -17,24 +46,10 @@ export class UsersService {
     });
   }
 
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      include: {
-        company: {
-          select: { id: true, name: true },
-        },
-        team: {
-          select: { id: true, name: true },
-        },
-        mentor: {
-          select: { id: true, name: true },
-        },
-        students: {
-          where: { deletedAt: null },
-          select: { id: true, name: true, email: true },
-        },
-      },
+      select: USER_SAFE_SELECT,
     });
   }
 
@@ -81,21 +96,7 @@ export class UsersService {
     const [items, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        include: {
-          company: {
-            select: { id: true, name: true },
-          },
-          team: {
-            select: { id: true, name: true },
-          },
-          mentor: {
-            select: { id: true, name: true },
-          },
-          students: {
-            where: { deletedAt: null },
-            select: { id: true, name: true, email: true },
-          },
-        },
+        select: USER_SAFE_SELECT,
         orderBy: { name: 'asc' },
         skip,
         take: limit,
@@ -119,7 +120,7 @@ export class UsersService {
     companyId: string;
     status: UserStatus;
     mentorId?: string;
-  }): Promise<User> {
+  }) {
     return this.prisma.user.create({
       data: {
         email: data.email,
@@ -129,17 +130,29 @@ export class UsersService {
         companyId: data.companyId,
         mentorId: data.mentorId || null,
       },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        status: true,
+        companyId: true,
+        mentorId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
-  async update(id: string, data: Partial<User>): Promise<User> {
+  async update(id: string, data: Partial<User>) {
     return this.prisma.user.update({
       where: { id },
       data,
+      select: USER_SAFE_SELECT,
     });
   }
 
-  async softDelete(id: string): Promise<User> {
+  async softDelete(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -153,6 +166,14 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { deletedAt: new Date(), status: UserStatus.INACTIVE },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        status: true,
+        deletedAt: true,
+      },
     });
   }
 }

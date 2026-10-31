@@ -25,6 +25,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    if (user.deletedAt) {
+      throw new UnauthorizedException('User account has been deactivated or deleted');
+    }
+
     if (user.status === 'PENDING_SETUP') {
       throw new UnauthorizedException('Please finish setting up your account first.');
     }
@@ -116,7 +120,7 @@ export class AuthService {
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<{ success: boolean }> {
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
+    if (!user || user.deletedAt !== null || user.status === 'INACTIVE') {
       return { success: true };
     }
 
@@ -154,21 +158,43 @@ export class AuthService {
       throw new BadRequestException('Reset token has expired');
     }
 
+    // Check account status before resetting password
+    const user = await this.prisma.user.findUnique({
+      where: { id: resetTokenRecord.userId },
+      select: { id: true, status: true, deletedAt: true },
+    });
+
+    if (!user || user.deletedAt !== null) {
+      throw new BadRequestException('User account has been deactivated or deleted');
+    }
+
+    if (user.status === 'INACTIVE') {
+      throw new BadRequestException('User account is currently inactive');
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const userDataToUpdate: any = {
+      passwordHash: hashedPassword,
+    };
+    if (user.status === 'PENDING_SETUP') {
+      userDataToUpdate.status = 'ACTIVE';
+    }
 
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: resetTokenRecord.userId },
-        data: {
-          passwordHash: hashedPassword,
-          status: 'ACTIVE',
-        },
+        data: userDataToUpdate,
       }),
       this.prisma.passwordResetToken.update({
         where: { id: resetTokenRecord.id },
         data: {
           usedAt: new Date(),
         },
+      }),
+      // Invalidate existing sessions/refresh tokens for this account
+      this.prisma.refreshToken.deleteMany({
+        where: { userId: resetTokenRecord.userId },
       }),
     ]);
 

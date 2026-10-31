@@ -109,12 +109,19 @@ export class UsersController {
       throw new NotFoundException('User not found');
     }
 
-    // Role-based restrictions
+    // Role-based restrictions:
+    // 1. Student can ONLY view their own profile
+    if (currentUser.role === UserRole.STUDENT && currentUser.id !== id) {
+      throw new ForbiddenException('Students can only view their own profile');
+    }
+
+    // 2. Mentor can only view their assigned students or their own profile
     if (
       currentUser.role === UserRole.MENTOR &&
+      currentUser.id !== id &&
       (user.role !== UserRole.STUDENT || user.mentorId !== currentUser.id)
     ) {
-      throw new ForbiddenException('You do not have permission to view this profile');
+      throw new ForbiddenException('Mentors can only view their assigned students or their own profile');
     }
 
     return user;
@@ -129,8 +136,13 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'Invitation created and email sent successfully.' })
   async invite(
     @Body() body: { email: string; role: UserRole; companyId: string; mentorId?: string },
-    @GetUser('id') invitedById: string,
+    @GetUser() currentUser: { id: string; role: UserRole },
   ) {
+    // BD_TEAM cannot invite as SUPER_ADMIN
+    if (currentUser.role === UserRole.BD_TEAM && body.role === UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('BD Team members cannot invite users as Super Admin');
+    }
+
     return this.invitationsService.createInvitation(
       {
         email: body.email,
@@ -139,7 +151,7 @@ export class UsersController {
         mentorId: body.mentorId,
         name: body.email.split('@')[0], // Generate temporary name from email prefix
       },
-      invitedById,
+      currentUser.id,
     );
   }
 
@@ -161,9 +173,33 @@ export class UsersController {
       throw new NotFoundException('User not found');
     }
 
-    // Permission checks: Admin and BD_TEAM can update anything. Own profile can update name and phone only.
-    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.role !== UserRole.BD_TEAM && currentUser.id !== id) {
+    // Permission checks: Admin, BD_TEAM, Mentor (for own students' team), or self
+    if (
+      currentUser.role !== UserRole.SUPER_ADMIN &&
+      currentUser.role !== UserRole.BD_TEAM &&
+      currentUser.id !== id &&
+      !(currentUser.role === UserRole.MENTOR && user.mentorId === currentUser.id)
+    ) {
       throw new ForbiddenException('You do not have permission to modify this user');
+    }
+
+    // BD_TEAM limitations:
+    if (currentUser.role === UserRole.BD_TEAM) {
+      // Cannot modify a SUPER_ADMIN account
+      if (user.role === UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException('BD Team members cannot modify Super Admin accounts');
+      }
+      // Cannot elevate anyone to SUPER_ADMIN
+      if (body.role === UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException('BD Team members cannot promote users to Super Admin');
+      }
+    }
+
+    // Non-admin roles (STUDENT, MENTOR) cannot modify administrative fields on themselves
+    if (currentUser.role !== UserRole.SUPER_ADMIN && currentUser.role !== UserRole.BD_TEAM) {
+      if (body.role || body.status || body.companyId || body.mentorId) {
+        throw new ForbiddenException('You do not have permission to modify administrative fields');
+      }
     }
 
     const dataToUpdate: any = {};
@@ -172,7 +208,9 @@ export class UsersController {
     }
     if (currentUser.role === UserRole.SUPER_ADMIN || currentUser.role === UserRole.BD_TEAM) {
       // Admin/BD fields
-      if (body.role) dataToUpdate.role = body.role;
+      if (body.role && (currentUser.role === UserRole.SUPER_ADMIN || body.role !== UserRole.SUPER_ADMIN)) {
+        dataToUpdate.role = body.role;
+      }
       if (body.status) dataToUpdate.status = body.status;
       if (body.companyId) dataToUpdate.companyId = body.companyId;
       if (body.mentorId !== undefined) dataToUpdate.mentorId = body.mentorId ? body.mentorId : null;
@@ -180,7 +218,7 @@ export class UsersController {
 
     // Self fields / generic fields
     if (body.name) dataToUpdate.name = body.name;
-    if (body.phone) dataToUpdate.phone = body.phone;
+    if (body.phone !== undefined) dataToUpdate.phone = body.phone;
 
     return this.usersService.update(id, dataToUpdate);
   }

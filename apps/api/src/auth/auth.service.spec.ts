@@ -193,6 +193,7 @@ describe('AuthService', () => {
       };
 
       (prismaService.passwordResetToken.findUnique as jest.Mock).mockResolvedValue(mockTokenRecord);
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue({ id: 'user-uuid', status: 'ACTIVE', deletedAt: null });
       (prismaService.user.update as jest.Mock).mockResolvedValue({});
       (prismaService.passwordResetToken.update as jest.Mock).mockResolvedValue({});
 
