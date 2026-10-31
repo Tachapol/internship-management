@@ -19,6 +19,32 @@ export class EmailService {
     }
   }
 
+  getDeliveryStatus() {
+    const senderDomain = this.fromEmail.match(/@([^>\s]+)/)?.[1] ?? null;
+    return { configured: !!this.resend && !!senderDomain && senderDomain !== 'resend.dev', senderDomain };
+  }
+
+  async sendNotificationEmail(email: string, title: string): Promise<boolean> {
+    if (!this.resend || !this.getDeliveryStatus().configured) return false;
+    const appUrl = (this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000').replace(/\/+$/, '');
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: email,
+        subject: title,
+        text: `You have a new notification on DevPlus. Sign in to view the details: ${appUrl}/notifications`,
+      });
+      if (error || !data?.id) {
+        this.logger.error('Resend did not accept a notification email', error);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      this.logger.error('Notification email failed', error);
+      return false;
+    }
+  }
+
   async sendInvitationEmail(email: string, token: string, companyName: string): Promise<boolean> {
     const appUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const invitationLink = `${appUrl}/auth/accept-invitation?token=${token}`;

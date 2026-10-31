@@ -371,10 +371,11 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
     }
   }, [activeTab, filterStartDate, filterEndDate, filterCompanyId, filterMentorId, filterStatus]);
 
-  const approvalTotal = data.leaveStats.APPROVED + data.leaveStats.REJECTED;
+  const leaveCounts = data.leaveStats.byStatus;
+  const approvalTotal = leaveCounts.APPROVED + leaveCounts.REJECTED;
   const approvalRate = approvalTotal > 0
-    ? ((data.leaveStats.APPROVED / approvalTotal) * 100).toFixed(0)
-    : "0";
+    ? ((leaveCounts.APPROVED / approvalTotal) * 100).toFixed(0)
+    : null;
 
   // Calculate Attendance Statistics
   const totalLogs = attendanceRecords.length;
@@ -508,19 +509,20 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
               <Card>
                 <CardHeader>
                   <h3 className="font-bold text-text-primary text-sm">Leave Approvals</h3>
-                  <span className="text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">{approvalRate}% Approved</span>
+                  <span className="text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">{approvalRate === null ? "No decisions yet" : `${approvalRate}% Approved`}</span>
                 </CardHeader>
                 <CardBody className="space-y-3">
                   <div className="grid grid-cols-2 gap-3 text-center">
                     <div className="p-2 bg-success/5 border border-success/10 rounded-lg">
-                      <p className="text-xs font-bold text-success">{data.leaveStats.APPROVED}</p>
+                      <p className="text-xs font-bold text-success">{leaveCounts.APPROVED}</p>
                       <p className="text-[10px] text-text-muted font-semibold">APPROVED</p>
                     </div>
                     <div className="p-2 bg-danger/5 border border-danger/10 rounded-lg">
-                      <p className="text-xs font-bold text-danger">{data.leaveStats.REJECTED}</p>
+                      <p className="text-xs font-bold text-danger">{leaveCounts.REJECTED}</p>
                       <p className="text-[10px] text-text-muted font-semibold">REJECTED</p>
                     </div>
                   </div>
+                  <p className="text-xs text-text-muted">{leaveCounts.APPROVED} approved out of {approvalTotal} reviewed requests. {leaveCounts.PENDING} pending requests excluded.</p>
                 </CardBody>
               </Card>
             </div>

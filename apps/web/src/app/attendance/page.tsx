@@ -50,7 +50,7 @@ function AttendancePageContent() {
   const now = new Date();
   const [year, setYear] = React.useState(now.getFullYear());
   const [month, setMonth] = React.useState(now.getMonth() + 1);
-  const [report, setReport] = React.useState<{ present: number; late: number; absent: number; onLeave: number; attendanceRate: number } | null>(null);
+  const [report, setReport] = React.useState<{ present: number; late: number; absent: number; onLeave: number; total: number; attendanceRate: number | null } | null>(null);
 
   const load = React.useCallback(() => {
     setLoading(true);
@@ -192,7 +192,7 @@ function AttendancePageContent() {
           <KpiCard label="Late" value={report.late} icon={AlertCircle} variant="amber" />
           <KpiCard label="Absent" value={report.absent} icon={XCircle} variant="rose" />
           <KpiCard label="On Leave" value={report.onLeave} icon={Clock} variant="violet" />
-          <KpiCard label="Attendance Rate" value={`${report.attendanceRate?.toFixed(1) ?? 0}%`} icon={CalendarCheck} variant="orange" />
+          <KpiCard label="Attendance Rate" value={report.total === 0 || report.attendanceRate == null ? "No data" : `${report.attendanceRate.toFixed(1)}%`} sub={`${report.total} attendance records`} icon={CalendarCheck} variant="orange" />
         </div>
       )}
 

@@ -3,7 +3,8 @@
 import * as React from "react";
 import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { useAuth } from "../../lib/auth-context";
-import { authApi, usersApi } from "../../lib/api";
+import { authApi, usersApi, notificationsApi } from "../../lib/api";
+import type { NotificationPreferences, NotificationPreferencesResponse } from "../../lib/types";
 import { PageHeader, Card, CardHeader, CardBody } from "../../components/ui/shared";
 import { User, Shield, Bell, Database, Globe, Loader2, CheckCircle, Eye, EyeOff } from "lucide-react";
 
@@ -58,6 +59,9 @@ function ToggleSetting({
       </div>
       <button
         type="button"
+        role="switch"
+        aria-label={label}
+        aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${
@@ -87,7 +91,7 @@ export default function SettingsPage() {
   const [pwSuccess, setPwSuccess] = React.useState(false);
   const [pwError, setPwError] = React.useState("");
 
-  const [notifPrefs, setNotifPrefs] = React.useState({
+  const [notifPrefs, setNotifPrefs] = React.useState<NotificationPreferences>({
     leaveAlerts: true,
     attendanceReminders: true,
     trainingPlanUpdates: true,
@@ -96,31 +100,39 @@ export default function SettingsPage() {
   });
   const [notifLoading, setNotifLoading] = React.useState(false);
   const [notifSuccess, setNotifSuccess] = React.useState(false);
+  const [notifFetching, setNotifFetching] = React.useState(true);
+  const [notifError, setNotifError] = React.useState("");
+  const [emailDelivery, setEmailDelivery] = React.useState<NotificationPreferencesResponse['emailDelivery'] | null>(null);
 
   React.useEffect(() => {
-    if (user?.id) {
-      try {
-        const saved = localStorage.getItem(`devplus_notif_prefs_${user.id}`);
-        if (saved) {
-          setNotifPrefs(JSON.parse(saved));
-        }
-      } catch {}
-    }
+    if (!user?.id) return;
+    let cancelled = false;
+    setNotifFetching(true);
+    notificationsApi.preferences().then(result => {
+      if (cancelled) return;
+      setNotifPrefs(result.preferences);
+      setEmailDelivery(result.emailDelivery);
+      setNotifError("");
+    }).catch(() => {
+      if (!cancelled) setNotifError("Could not load notification preferences. Reload the page to try again.");
+    }).finally(() => { if (!cancelled) setNotifFetching(false); });
+    return () => { cancelled = true; };
   }, [user?.id]);
 
-  function handleSaveNotifPrefs(e: React.FormEvent) {
+  async function handleSaveNotifPrefs(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
     setNotifLoading(true);
     setNotifSuccess(false);
+    setNotifError("");
     try {
-      localStorage.setItem(`devplus_notif_prefs_${user.id}`, JSON.stringify(notifPrefs));
-      setTimeout(() => {
-        setNotifLoading(false);
-        setNotifSuccess(true);
-        setTimeout(() => setNotifSuccess(false), 3000);
-      }, 250);
+      const result = await notificationsApi.savePreferences(notifPrefs);
+      setNotifPrefs(result.preferences);
+      setEmailDelivery(result.emailDelivery);
+      setNotifSuccess(true);
     } catch {
+      setNotifError("Could not save notification preferences. Please try again.");
+    } finally {
       setNotifLoading(false);
     }
   }
@@ -319,7 +331,9 @@ export default function SettingsPage() {
         {/* Notifications */}
         <SettingSection icon={Bell} title="Notification Preferences" description="Control what alerts you receive">
           <form onSubmit={handleSaveNotifPrefs} className="space-y-4">
-            <div>
+            <fieldset disabled={notifFetching || notifLoading || !emailDelivery}>
+              <legend className="sr-only">Notification preferences</legend>
+              {notifFetching && <p role="status" className="text-sm text-text-muted">Loading preferences…</p>}
               <ToggleSetting
                 label="Leave Request Alerts"
                 description="In-app notification when a student submits a leave request or a review is completed"
@@ -328,7 +342,7 @@ export default function SettingsPage() {
               />
               <ToggleSetting
                 label="Attendance Reminders"
-                description="Daily in-app reminder when internship check-in is not yet logged"
+                description="In-app attendance alerts and reminders issued by the system"
                 checked={notifPrefs.attendanceReminders}
                 onChange={checked => setNotifPrefs(p => ({ ...p, attendanceReminders: checked }))}
               />
@@ -346,12 +360,15 @@ export default function SettingsPage() {
               />
               <ToggleSetting
                 label="Email Notifications"
-                description="Receive email dispatch for important alerts. (Requires verified custom domain at resend.com/domains)"
+                description={!emailDelivery ? "Checking email configuration…" : emailDelivery.configured ? "Also email me when an enabled notification is created." : "Email delivery is not configured. Contact your administrator."}
                 checked={notifPrefs.emailNotifications}
                 onChange={checked => setNotifPrefs(p => ({ ...p, emailNotifications: checked }))}
-                badge="Sandbox Mode"
+                disabled={!emailDelivery?.configured}
+                badge={emailDelivery ? emailDelivery.configured ? "Email configured" : "Email unavailable" : undefined}
               />
-            </div>
+            </fieldset>
+
+            {notifError && <p role="alert" className="text-sm text-danger">{notifError}</p>}
 
             {notifSuccess && (
               <div className="flex items-center gap-2 text-success text-xs font-semibold">
@@ -362,7 +379,7 @@ export default function SettingsPage() {
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                disabled={notifLoading}
+                disabled={notifLoading || notifFetching || !emailDelivery}
                 className="h-9 px-5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-hover transition-all shadow-sm active:scale-[0.98] disabled:opacity-60 flex items-center gap-2"
               >
                 {notifLoading && <Loader2 className="h-4 w-4 animate-spin" />}

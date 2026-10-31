@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BrandMark } from "../../../components/brand-mark";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../../../lib/auth-context";
 import { invitationsApi } from "../../../lib/api";
@@ -106,9 +107,7 @@ function AcceptInvitationForm() {
       <div className="min-h-screen bg-bgPage flex items-center justify-center p-6">
         <div className="w-full max-w-md bg-white p-8 rounded-2xl border border-borderGray shadow-xl space-y-6 text-center">
           <div className="flex flex-col items-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-brand flex items-center justify-center shadow-lg shadow-brand/20">
-              <span className="font-bold text-white text-lg">D+</span>
-            </div>
+            <BrandMark className="h-12 w-12" />
             <h1 className="text-3xl font-extrabold tracking-tight text-text-primary mt-2">DevPlus</h1>
           </div>
 
@@ -148,9 +147,7 @@ function AcceptInvitationForm() {
       <div className="w-full max-w-md bg-white p-8 rounded-2xl border border-borderGray shadow-xl space-y-6">
         {/* Logo and Greeting */}
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-brand flex items-center justify-center shadow-lg shadow-brand/20">
-            <span className="font-bold text-white text-lg">D+</span>
-          </div>
+          <BrandMark className="h-12 w-12" />
           <h1 className="text-3xl font-extrabold tracking-tight text-text-primary mt-2">DevPlus</h1>
           <p className="text-text-muted text-xs font-medium mt-1 leading-relaxed">
             Joining <strong className="text-text-primary">{inviteInfo?.companyName}</strong> as a{" "}

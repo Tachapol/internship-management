@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { supportTicketsApi, type SupportTicket } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
@@ -39,14 +39,14 @@ function formatRelative(date: string) {
 }
 
 // ─── Row Component ────────────────────────────────────────────
-function TicketRow({ ticket }: { ticket: SupportTicket }) {
+function TicketRow({ ticket, returnTo }: { ticket: SupportTicket; returnTo: string }) {
   const status = STATUS_META[ticket.status] ?? STATUS_META.OPEN;
   const priority = PRIORITY_META[ticket.priority] ?? PRIORITY_META.MEDIUM;
   const StatusIcon = status.icon;
 
   return (
     <Link
-      href={`/support/${ticket.id}`}
+      href={`/support/${ticket.id}?returnTo=${encodeURIComponent(returnTo)}`}
       id={`admin-ticket-${ticket.id}`}
       className="block group"
     >
@@ -113,15 +113,21 @@ function TicketRow({ ticket }: { ticket: SupportTicket }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────
-export default function SupportTicketsAdminPage() {
+function SupportTicketsAdminContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const [tickets, setTickets] = React.useState<SupportTicket[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
-  const [search, setSearch] = React.useState("");
-  const [filterStatus, setFilterStatus] = React.useState("ALL");
-  const [filterPriority, setFilterPriority] = React.useState("ALL");
+  const [search, setSearch] = React.useState(searchParams.get('q') ?? '');
+  const [filterStatus, setFilterStatus] = React.useState(searchParams.get('status') ?? 'ALL');
+  const [filterPriority, setFilterPriority] = React.useState(searchParams.get('priority') ?? 'ALL');
+  const returnQuery = new URLSearchParams();
+  if (search) returnQuery.set('q', search);
+  if (filterStatus !== 'ALL') returnQuery.set('status', filterStatus);
+  if (filterPriority !== 'ALL') returnQuery.set('priority', filterPriority);
+  const returnTo = '/support-tickets' + (returnQuery.size ? `?${returnQuery}` : '');
 
   // Guard: staff only
   React.useEffect(() => {
@@ -297,11 +303,15 @@ export default function SupportTicketsAdminPage() {
         ) : (
           <div>
             {filtered.map((ticket) => (
-              <TicketRow key={ticket.id} ticket={ticket} />
+              <TicketRow key={ticket.id} ticket={ticket} returnTo={returnTo} />
             ))}
           </div>
         )}
       </Card>
     </DashboardShell>
   );
+}
+
+export default function SupportTicketsAdminPage() {
+  return <React.Suspense fallback={<p role="status">Loading tickets…</p>}><SupportTicketsAdminContent /></React.Suspense>;
 }

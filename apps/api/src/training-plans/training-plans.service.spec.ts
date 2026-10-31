@@ -1,127 +1,62 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { TrainingPlansService } from './training-plans.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { UserRole, TrainingPlanStatus } from 'database';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { NotificationType, UserRole, TrainingPlanStatus } from 'database';
 
 describe('TrainingPlansService', () => {
   let service: TrainingPlansService;
-  let prisma: jest.Mocked<PrismaService>;
-  let storage: jest.Mocked<StorageService>;
-
-  beforeEach(async () => {
-    const mockPrisma = {
-      user: {
-        findUnique: jest.fn(),
-      },
-      trainingPlan: {
-        create: jest.fn(),
-        update: jest.fn(),
-        findUnique: jest.fn(),
-        delete: jest.fn(),
-        findMany: jest.fn(),
-      },
+  let prisma: any;
+  let storage: any;
+  let notifications: any;
+  beforeEach(() => {
+    prisma = {
+      team: { findUnique: jest.fn(async () => ({ id: 'team' })) },
+      user: { findMany: jest.fn(async () => [{ id: 'student' }]), findFirst: jest.fn(async () => ({ id: 'student' })) },
+      trainingPlan: { create: jest.fn(async ({ data }) => ({ id: 'plan', ...data })), findFirst: jest.fn(), findUnique: jest.fn() },
+      trainingPlanModule: { create: jest.fn(async ({ data }) => ({ id: 'module', ...data })), findFirst: jest.fn(async () => ({ id: 'module' })) },
+      studentModuleProgress: { upsert: jest.fn(async ({ create }) => create) },
     };
-
-    const mockStorage = {
-      uploadFile: jest.fn(),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        TrainingPlansService,
-        { provide: PrismaService, useValue: mockPrisma },
-        { provide: StorageService, useValue: mockStorage },
-      ],
-    }).compile();
-
-    service = module.get<TrainingPlansService>(TrainingPlansService);
-    prisma = module.get(PrismaService) as any;
-    storage = module.get(StorageService) as any;
+    storage = { uploadFile: jest.fn(async () => 'https://example.test/module.pdf') };
+    notifications = { createNotification: jest.fn(async () => ({ id: 'notice' })) };
+    service = new TrainingPlansService(prisma, storage, notifications);
   });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('creates a team plan and routes training notifications through recipient preferences', async () => {
+    const result = await service.createPlan({ teamId: 'team', title: 'Curriculum' }, 'mentor');
+    expect(result.teamId).toBe('team');
+    expect(notifications.createNotification).toHaveBeenCalledWith('student', 'New training plan assigned', expect.any(String), NotificationType.TRAINING, { trainingPlanId: 'plan' });
+    expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { teamId: 'team', role: 'STUDENT', status: 'ACTIVE', deletedAt: null } }));
   });
-
-  describe('createPlan', () => {
-    it('should create plan successfully', async () => {
-      const dto = {
-        studentId: 'student-uuid',
-        title: 'Week 1: Foundations',
-        weekNumber: 1,
-        externalLink: 'https://link.com',
-      };
-
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'student-uuid', role: UserRole.STUDENT });
-      (prisma.trainingPlan.create as jest.Mock).mockResolvedValue({ id: 'plan-uuid', ...dto });
-
-      const result = await service.createPlan(dto, 'mentor-uuid');
-
-      expect(result).toBeDefined();
-      expect(prisma.user.findUnique).toHaveBeenCalled();
-      expect(prisma.trainingPlan.create).toHaveBeenCalled();
-    });
-
-    it('should upload PDF if file is provided', async () => {
-      const dto = {
-        studentId: 'student-uuid',
-        title: 'Week 1: Foundations',
-        weekNumber: 1,
-      };
-
-      const mockFile = {
-        originalname: 'test.pdf',
-        buffer: Buffer.from('hello'),
-        mimetype: 'application/pdf',
-      } as any;
-
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'student-uuid', role: UserRole.STUDENT });
-      storage.uploadFile.mockResolvedValue('https://supabase.url/test.pdf');
-      (prisma.trainingPlan.create as jest.Mock).mockResolvedValue({ id: 'plan-uuid', ...dto, fileUrl: 'https://supabase.url/test.pdf' });
-
-      const result = await service.createPlan(dto, 'mentor-uuid', mockFile);
-
-      expect(result.fileUrl).toBe('https://supabase.url/test.pdf');
-      expect(storage.uploadFile).toHaveBeenCalledWith(mockFile, 'training-plans');
-    });
-
-    it('should throw NotFoundException if student does not exist', async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
-
-      await expect(
-        service.createPlan({ studentId: 'invalid', title: 'Week 1', weekNumber: 1 }, 'mentor-uuid'),
-      ).rejects.toThrow(NotFoundException);
-    });
+  it('rejects a plan without an assigned team', async () => {
+    prisma.team.findUnique.mockResolvedValue(null);
+    await expect(service.createPlan({ teamId: 'missing', title: 'Curriculum' }, 'mentor')).rejects.toThrow(NotFoundException);
+    expect(prisma.trainingPlan.create).not.toHaveBeenCalled();
   });
-
-  describe('updateProgress', () => {
-    it('should update progress successfully', async () => {
-      (prisma.trainingPlan.findUnique as jest.Mock).mockResolvedValue({ id: 'plan-uuid', status: TrainingPlanStatus.ACTIVE });
-      (prisma.trainingPlan.update as jest.Mock).mockResolvedValue({ id: 'plan-uuid', status: TrainingPlanStatus.COMPLETED });
-
-      const result = await service.updateProgress('plan-uuid', TrainingPlanStatus.COMPLETED);
-
-      expect(result.status).toBe(TrainingPlanStatus.COMPLETED);
-    });
+  it('uploads module resources, rather than attaching PDFs to the plan', async () => {
+    prisma.trainingPlan.findFirst.mockResolvedValue({ id: 'plan', teamId: 'team' });
+    const file = { originalname: 'resource.pdf', buffer: Buffer.from('test'), mimetype: 'application/pdf' } as any;
+    const result = await service.createModule({ trainingPlanId: 'plan', title: 'Module', weekNumber: 1 }, file);
+    expect(result.fileUrl).toBe('https://example.test/module.pdf');
+    expect(storage.uploadFile).toHaveBeenCalledWith(file, 'training-plans');
+    expect(notifications.createNotification).toHaveBeenCalledWith('student', 'New training module assigned', expect.any(String), NotificationType.TRAINING, expect.any(Object));
   });
-
-  describe('getPlanDetails', () => {
-    it('should throw ForbiddenException if student tries to view another students plan', async () => {
-      (prisma.trainingPlan.findUnique as jest.Mock).mockResolvedValue({ id: 'plan-uuid', studentId: 'student-a' });
-
-      await expect(
-        service.getPlanDetails('plan-uuid', { id: 'student-b', role: UserRole.STUDENT }),
-      ).rejects.toThrow(ForbiddenException);
-    });
-
-    it('should allow mentor to view student plan', async () => {
-      (prisma.trainingPlan.findUnique as jest.Mock).mockResolvedValue({ id: 'plan-uuid', studentId: 'student-a' });
-
-      const result = await service.getPlanDetails('plan-uuid', { id: 'mentor-uuid', role: UserRole.MENTOR });
-
-      expect(result).toBeDefined();
-    });
+  it('updates the progress of an individual student module', async () => {
+    const result = await service.updateModuleProgress('module', 'student', TrainingPlanStatus.COMPLETED);
+    expect(result.status).toBe('COMPLETED');
+    expect(result.completedAt).toBeInstanceOf(Date);
+    expect(prisma.studentModuleProgress.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { studentId_moduleId: { studentId: 'student', moduleId: 'module' } } }));
+  });
+  it('does not let a student view another team curriculum', async () => {
+    prisma.trainingPlan.findFirst.mockResolvedValue({ id: 'plan', teamId: 'team-a', modules: [] });
+    await expect(service.getPlanDetails('plan', { id: 'student', role: UserRole.STUDENT, teamId: 'team-b' })).rejects.toThrow(ForbiddenException);
+  });
+  it('allows a mentor to read curriculum modules', async () => {
+    prisma.trainingPlan.findFirst.mockResolvedValue({ id: 'plan', teamId: 'team', modules: [] });
+    expect(await service.getPlanDetails('plan', { id: 'mentor', role: UserRole.MENTOR })).toMatchObject({ id: 'plan', modules: [] });
+  });
+  it('returns an actual cohort summary for staff without exposing the internal student list', async () => {
+    prisma.trainingPlan.findMany = jest.fn(async () => [{ id: 'plan', teamId: 'team', team: { id: 'team', name: 'Team', users: [{ id: 'student' }] }, modules: [{ id: 'module', dueDate: new Date('2020-01-01'), progresses: [{ studentId: 'student', status: 'COMPLETED' }] }] }]);
+    prisma.trainingPlan.count = jest.fn(async () => 1);
+    const result = await service.getPlansList({ id: 'bd', role: UserRole.BD_TEAM }, {});
+    expect(result.items[0].cohortProgress).toEqual({ students: 1, total: 1, completed: 1, overdue: 0, rate: 100 });
+    expect(result.items[0].team).toEqual({ id: 'team', name: 'Team' });
   });
 });

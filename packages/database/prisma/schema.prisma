@@ -51,6 +51,7 @@ model User {
   approvedLeaveRequests LeaveRequest[]          @relation("ApproverLeaveRequests")
   leaveRequests         LeaveRequest[]          @relation("StudentLeaveRequests")
   notifications         Notification[]
+  notificationPreference NotificationPreference?
   passwordResetTokens   PasswordResetToken[]
   refreshTokens         RefreshToken[]
   moduleProgress        StudentModuleProgress[]
@@ -246,6 +247,18 @@ model LeaveRequest {
   @@index([approvedById])
   @@index([deletedAt])
   @@map("leave_requests")
+}
+
+model NotificationPreference {
+  userId String @id @db.Uuid
+  leaveAlerts Boolean @default(true)
+  attendanceReminders Boolean @default(true)
+  trainingPlanUpdates Boolean @default(true)
+  announcements Boolean @default(true)
+  emailNotifications Boolean @default(false)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }
 
 model Notification {

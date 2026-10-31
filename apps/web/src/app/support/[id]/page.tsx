@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { supportReturnPath } from "../../../lib/support-navigation";
 import { DashboardShell } from "../../../components/layout/dashboard-shell";
 import { supportTicketsApi, usersApi, type SupportTicketDetail, type SupportTicketReply } from "../../../lib/api";
 import type { User } from "../../../lib/types";
@@ -118,10 +119,12 @@ function StatusChanger({
 }
 
 // ─── Main Page ────────────────────────────────────────────────
-export default function TicketDetailPage() {
+function TicketDetailContent() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const backHref = supportReturnPath(user?.role, searchParams.get('returnTo'));
   const [ticket, setTicket] = React.useState<SupportTicketDetail | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -210,7 +213,7 @@ export default function TicketDetailPage() {
 
   if (loading) {
     return (
-      <DashboardShell title="Support Ticket" breadcrumb={[{ label: "Support", href: "/support" }, { label: "Ticket" }]}>
+      <DashboardShell title="Support Ticket" breadcrumb={[{ label: "Support", href: backHref }, { label: "Ticket" }]}>
         <div className="flex items-center justify-center py-24">
           <Loader2 className="h-8 w-8 animate-spin text-brand" />
         </div>
@@ -220,11 +223,11 @@ export default function TicketDetailPage() {
 
   if (error || !ticket) {
     return (
-      <DashboardShell title="Support Ticket" breadcrumb={[{ label: "Support", href: "/support" }, { label: "Error" }]}>
+      <DashboardShell title="Support Ticket" breadcrumb={[{ label: "Support", href: backHref }, { label: "Error" }]}>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <AlertCircle className="h-8 w-8 text-danger mb-3" />
           <p className="text-sm font-semibold text-text-primary mb-3">{error || "Ticket not found."}</p>
-          <button onClick={() => router.push("/support")} className="text-sm text-brand hover:underline font-medium">
+          <button onClick={() => router.push(backHref)} className="text-sm text-brand hover:underline font-medium">
             ← Back to Support
           </button>
         </div>
@@ -239,12 +242,12 @@ export default function TicketDetailPage() {
   return (
     <DashboardShell
       title="Support Ticket"
-      breadcrumb={[{ label: "Support", href: "/support" }, { label: ticket.subject }]}
+      breadcrumb={[{ label: "Support", href: backHref }, { label: ticket.subject }]}
     >
       {/* Back + refresh */}
       <div className="flex items-center justify-between mb-4">
         <Link
-          href="/support"
+          href={backHref}
           className="flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-brand transition-colors"
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Back to Support
@@ -438,4 +441,8 @@ export default function TicketDetailPage() {
       </div>
     </DashboardShell>
   );
+}
+
+export default function TicketDetailPage() {
+  return <React.Suspense fallback={<p role="status">Loading ticket…</p>}><TicketDetailContent /></React.Suspense>;
 }

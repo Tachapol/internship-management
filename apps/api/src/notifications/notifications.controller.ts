@@ -17,6 +17,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UserRole, NotificationType } from 'database';
+import { NotificationPreferencesDto } from './dto/notification-preferences.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -24,6 +25,18 @@ import { UserRole, NotificationType } from 'database';
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
+
+  @Get('preferences')
+  @ApiOperation({ summary: 'Get notification preferences for the current user' })
+  getPreferences(@GetUser('id') userId: string) {
+    return this.notificationsService.getPreferences(userId);
+  }
+
+  @Patch('preferences')
+  @ApiOperation({ summary: 'Save notification preferences for the current user' })
+  savePreferences(@GetUser('id') userId: string, @Body() dto: NotificationPreferencesDto) {
+    return this.notificationsService.savePreferences(userId, dto);
+  }
 
   @Get()
   @ApiOperation({

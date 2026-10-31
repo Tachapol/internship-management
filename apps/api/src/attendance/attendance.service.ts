@@ -186,7 +186,7 @@ export class AttendanceService {
 
     const totalDays = report.present + report.late + report.absent + report.onLeave;
     const presentDays = report.present + report.late;
-    const attendanceRate = totalDays > 0 ? parseFloat(((presentDays / totalDays) * 100).toFixed(1)) : 100;
+    const attendanceRate = totalDays > 0 ? parseFloat(((presentDays / totalDays) * 100).toFixed(1)) : null;
 
     return {
       ...report,

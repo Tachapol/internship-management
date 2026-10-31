@@ -17,6 +17,16 @@ export class InvitationsService {
   ) { }
 
   async createInvitation(dto: CreateInvitationDto, invitedById: string): Promise<Invitation & { emailSent: boolean }> {
+    const company = await this.prisma.company.findUnique({
+      where: { id: dto.companyId },
+    });
+    if (!company) {
+      throw new NotFoundException('Company not found');
+    }
+    if (company.status !== 'ACTIVE' || company.deletedAt) {
+      throw new BadRequestException('Invitations can only be sent to an active company');
+    }
+
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
       if (existingUser.status === UserStatus.ACTIVE) {
@@ -35,13 +45,6 @@ export class InvitationsService {
         mentorId: dto.mentorId || null,
         status: UserStatus.PENDING_SETUP,
       });
-
-      const company = await this.prisma.company.findUnique({
-        where: { id: dto.companyId },
-      });
-      if (!company) {
-        throw new NotFoundException('Company not found');
-      }
 
       const token = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date();
@@ -64,13 +67,6 @@ export class InvitationsService {
         ...invitation,
         emailSent,
       };
-    }
-
-    const company = await this.prisma.company.findUnique({
-      where: { id: dto.companyId },
-    });
-    if (!company) {
-      throw new NotFoundException('Company not found');
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -125,6 +121,9 @@ export class InvitationsService {
     });
     if (!company) {
       throw new NotFoundException('Assigned company not found');
+    }
+    if (company.status !== 'ACTIVE' || company.deletedAt) {
+      throw new BadRequestException('Invitations can only be sent to an active company');
     }
 
     // Revoke all previous pending and expired invitations

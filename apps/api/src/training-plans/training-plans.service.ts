@@ -5,14 +5,28 @@ import { CreateTrainingPlanDto } from './dto/create-training-plan.dto';
 import { UpdateTrainingPlanDto } from './dto/update-training-plan.dto';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
-import { TrainingPlan, TrainingPlanStatus, UserRole } from 'database';
+import { TrainingPlan, TrainingPlanStatus, UserRole, NotificationType } from 'database';
+import { trainingSummary } from './training-summary';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TrainingPlansService {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private notificationsService: NotificationsService,
   ) {}
+
+  private async notifyTeam(teamId: string, planId: string, title: string) {
+    try {
+      const students = await this.prisma.user.findMany({
+        where: { teamId, role: UserRole.STUDENT, status: 'ACTIVE', deletedAt: null }, select: { id: true },
+      });
+      await Promise.all(students.map(student => this.notificationsService.createNotification(
+        student.id, title, 'Your team training curriculum has been updated.', NotificationType.TRAINING, { trainingPlanId: planId },
+      )));
+    } catch (error) { console.error('Could not notify the training team:', error); }
+  }
 
   async createPlan(
     dto: CreateTrainingPlanDto,
@@ -25,7 +39,7 @@ export class TrainingPlansService {
       throw new NotFoundException('Assigned team not found');
     }
 
-    return this.prisma.trainingPlan.create({
+    const plan = await this.prisma.trainingPlan.create({
       data: {
         title: dto.title,
         description: dto.description,
@@ -33,6 +47,8 @@ export class TrainingPlansService {
         createdById: creatorId,
       },
     });
+    await this.notifyTeam(dto.teamId, plan.id, 'New training plan assigned');
+    return plan;
   }
 
   async updatePlan(
@@ -170,15 +186,15 @@ export class TrainingPlansService {
         where,
         include: {
           team: {
-            select: { id: true, name: true },
+            select: { id: true, name: true, users: { where: { role: UserRole.STUDENT, status: 'ACTIVE', deletedAt: null }, select: { id: true } } },
           },
           modules: {
             where: { deletedAt: null },
             orderBy: { weekNumber: 'asc' },
             include: {
               progresses: {
-                where: { studentId: user.id },
-                select: { status: true, completedAt: true },
+                where: user.role === UserRole.STUDENT ? { studentId: user.id } : { student: { status: 'ACTIVE', deletedAt: null } },
+                select: { studentId: true, status: true, completedAt: true },
               },
             },
           },
@@ -212,11 +228,12 @@ export class TrainingPlansService {
         title: plan.title,
         description: plan.description,
         teamId: plan.teamId,
-        team: plan.team,
+        team: { id: plan.team.id, name: plan.team.name },
         createdById: plan.createdById,
         createdAt: plan.createdAt,
         updatedAt: plan.updatedAt,
         modules: modulesWithProgress,
+        cohortProgress: user.role === UserRole.STUDENT ? undefined : trainingSummary(plan.modules, plan.team.users.map(student => student.id)),
       };
     });
 
@@ -245,7 +262,7 @@ export class TrainingPlansService {
       fileUrl = await this.storageService.uploadFile(pdfFile, 'training-plans');
     }
 
-    return this.prisma.trainingPlanModule.create({
+    const module = await this.prisma.trainingPlanModule.create({
       data: {
         trainingPlanId: dto.trainingPlanId,
         title: dto.title,
@@ -256,6 +273,8 @@ export class TrainingPlansService {
         fileUrl,
       },
     });
+    await this.notifyTeam(plan.teamId, plan.id, 'New training module assigned');
+    return module;
   }
 
   async updateModule(
@@ -275,7 +294,7 @@ export class TrainingPlansService {
       fileUrl = await this.storageService.uploadFile(pdfFile, 'training-plans');
     }
 
-    return this.prisma.trainingPlanModule.update({
+    const updatedModule = await this.prisma.trainingPlanModule.update({
       where: { id },
       data: {
         title: dto.title,
@@ -286,6 +305,9 @@ export class TrainingPlansService {
         fileUrl,
       },
     });
+    const plan = await this.prisma.trainingPlan.findUnique({ where: { id: module.trainingPlanId } });
+    if (plan) await this.notifyTeam(plan.teamId, plan.id, 'Training module updated');
+    return updatedModule;
   }
 
   async deleteModule(id: string): Promise<{ success: boolean }> {

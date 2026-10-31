@@ -735,9 +735,14 @@ export default function TrainingPlansPage() {
                         <ProgressBar value={progressRate} />
                       </div>
                     ) : (
-                      <div className="pt-3 border-t border-borderGray flex items-center justify-between text-xs font-semibold text-text-muted">
-                        <span>Curriculum Duration</span>
-                        <span className="text-text-secondary">{totalModules} {totalModules === 1 ? "module" : "modules"}</span>
+                      <div className="pt-3 border-t border-borderGray space-y-2 text-xs font-semibold text-text-muted">
+                        <div className="flex items-center justify-between"><span>Curriculum</span>
+                        <span className="text-text-secondary">{totalModules} {totalModules === 1 ? "module" : "modules"}</span></div>
+                        {p.cohortProgress && <>
+                          <div className="flex justify-between gap-2"><span>Module assignments completed</span><span>{p.cohortProgress.total ? `${p.cohortProgress.completed}/${p.cohortProgress.total} (${p.cohortProgress.rate}%)` : "No assignments"}</span></div>
+                          {p.cohortProgress.rate !== null && <ProgressBar value={p.cohortProgress.rate} />}
+                          <p className={p.cohortProgress.overdue ? "text-danger" : "text-text-muted"}>{p.cohortProgress.overdue} overdue assignments · {p.cohortProgress.students} active students</p>
+                        </>}
                       </div>
                     )}
                   </div>

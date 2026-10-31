@@ -13,6 +13,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: { default: "DevPlus", template: "%s · DevPlus" },
   description: "Enterprise-grade Internship Management System",
+  icons: {
+    icon: "/branding/devplus-mark.png",
+    apple: "/branding/devplus-mark.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

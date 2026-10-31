@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { usersApi, companiesApi, invitationsApi } from "../../lib/api";
-import type { User, UserRole } from "../../lib/types";
+import type { User, UserRole, Company } from "../../lib/types";
 import { PageHeader, StatusBadge, EmptyState, ErrorState, DataTable, Card } from "../../components/ui/shared";
 import { Users, UserPlus, Search, MoreVertical, Mail, Loader2, Link2, Check, Upload, Copy, CheckCircle2, AlertCircle, RotateCw } from "lucide-react";
 import { formatDate } from "../../lib/utils";
@@ -32,7 +32,7 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
   const [email, setEmail] = React.useState("");
   const [role, setRole] = React.useState<"STUDENT" | "MENTOR" | "BD_TEAM">("STUDENT");
   const [companyId, setCompanyId] = React.useState("");
-  const [companies, setCompanies] = React.useState<{ id: string; name: string }[]>([]);
+  const [companies, setCompanies] = React.useState<Company[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [loadingCompanies, setLoadingCompanies] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -41,15 +41,13 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
 
   React.useEffect(() => {
     companiesApi
-      .list({ limit: 100 })
+      .list({ limit: 100, status: "ACTIVE" })
       .then(res => {
-        setCompanies(res.data);
-        if (res.data.length > 0) {
-          setCompanyId(res.data[0].id);
-        }
+        setCompanies(res.data.filter(company => company.status === "ACTIVE"));
       })
       .catch(err => {
         console.error("Failed to load companies:", err);
+        setError("Could not load active organisations. Close this dialog and try again.");
       })
       .finally(() => {
         setLoadingCompanies(false);
@@ -135,11 +133,8 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
                     onChange={e => setCompanyId(e.target.value)}
                     className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
                   >
-                    {companies.length === 0 ? (
-                      <option value="">No companies registered</option>
-                    ) : (
-                      companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)
-                    )}
+                    <option value="">{companies.length === 0 ? "No active organisations available" : "Select organisation"}</option>
+                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 )}
               </div>
@@ -341,6 +336,48 @@ function UsersPageContent() {
     }
   }
 
+  const renderUserActions = (u: User) => (
+    <div className="relative">
+      <button
+        aria-label={`Actions for ${u.name}`}
+        aria-expanded={openMenu === u.id}
+        onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)}
+        className="min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-bgInput text-text-muted hover:text-text-primary"
+      >
+        <MoreVertical className="h-4 w-4" />
+      </button>
+      {openMenu === u.id && (
+        <div className="absolute right-0 top-8 z-20 bg-white border border-borderGray rounded-xl shadow-lg min-w-[160px] py-1">
+          <Link href={`/users/${u.id}`} onClick={() => setOpenMenu(null)} className="flex px-3 py-2 text-sm text-text-primary hover:bg-bgInput">View Profile</Link>
+          {currentUser && (currentUser.role === "SUPER_ADMIN" || currentUser.role === "BD_TEAM") && (
+            <>
+              {u.status === "PENDING_SETUP" && (
+                <>
+                  <button
+                    onClick={() => { handleCopyLink(u); setOpenMenu(null); }}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-brand hover:bg-brand/5 w-full text-left"
+                  >
+                    {copiedId === u.id ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+                    {copiedId === u.id ? "Copied!" : "Copy Invite Link"}
+                  </button>
+                  <button
+                    onClick={() => { handleResendInvite(u); setOpenMenu(null); }}
+                    disabled={resendingId === u.id}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-brand hover:bg-brand/5 w-full text-left disabled:opacity-50"
+                  >
+                    {resendingId === u.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
+                    Resend & Renew Link
+                  </button>
+                </>
+              )}
+              <button onClick={() => { handleDelete(u.id); setOpenMenu(null); }} className="flex px-3 py-2 text-sm text-danger hover:bg-danger/5 w-full text-left">Deactivate</button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <DashboardShell title="Users" breadcrumb={[{ label: "Users" }]}>
       <PageHeader
@@ -414,6 +451,32 @@ function UsersPageContent() {
 
       {!error && (
         <Card>
+          <div className="md:hidden divide-y divide-borderGray" data-testid="users-mobile-list">
+            {loading ? <p role="status" className="p-5 text-sm text-text-muted">Loading users…</p> : users.map(u => (
+              <article key={u.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex gap-3 min-w-0">
+                    <Avatar name={u.name} />
+                    <div className="min-w-0">
+                      <Link href={`/users/${u.id}`} className="font-semibold text-sm text-text-primary break-words">{u.name}</Link>
+                      <p className="text-xs text-text-muted break-all">{u.email}</p>
+                    </div>
+                  </div>
+                  {renderUserActions(u)}
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${ROLE_COLORS[u.role]}`}>{u.role.replaceAll('_', ' ')}</span>
+                  <StatusBadge status={u.status} />
+                </div>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                  <dt className="text-text-muted">Company</dt><dd className="text-text-primary break-words">{u.company?.name ?? 'Unassigned'}</dd>
+                  <dt className="text-text-muted">Mentor</dt><dd className="text-text-primary">{u.mentor?.name ?? 'Unassigned'}</dd>
+                  <dt className="text-text-muted">Joined</dt><dd className="text-text-primary">{formatDate(u.createdAt)}</dd>
+                </dl>
+              </article>
+            ))}
+          </div>
+          <div className="hidden md:block" data-testid="users-desktop-table">
           <DataTable
             headers={["User", "Role", "Status", "Company", "Mentor", "Joined", "Actions"]}
             loading={loading}
@@ -446,47 +509,12 @@ function UsersPageContent() {
                   {formatDate(u.createdAt)}
                 </td>
                 <td className="px-4 py-3.5">
-                  <div className="relative">
-                    <button
-                      onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)}
-                      className="p-1.5 rounded-lg hover:bg-bgInput text-text-muted hover:text-text-primary"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                    {openMenu === u.id && (
-                      <div className="absolute right-0 top-8 z-20 bg-white border border-borderGray rounded-xl shadow-lg min-w-[160px] py-1">
-                        <Link href={`/users/${u.id}`} onClick={() => setOpenMenu(null)} className="flex px-3 py-2 text-sm text-text-primary hover:bg-bgInput">View Profile</Link>
-                        {currentUser && (currentUser.role === "SUPER_ADMIN" || currentUser.role === "BD_TEAM") && (
-                          <>
-                            {u.status === "PENDING_SETUP" && (
-                              <>
-                                <button
-                                  onClick={() => { handleCopyLink(u); setOpenMenu(null); }}
-                                  className="flex items-center gap-2 px-3 py-2 text-sm text-brand hover:bg-brand/5 w-full text-left"
-                                >
-                                  {copiedId === u.id ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
-                                  {copiedId === u.id ? "Copied!" : "Copy Invite Link"}
-                                </button>
-                                <button
-                                  onClick={() => { handleResendInvite(u); setOpenMenu(null); }}
-                                  disabled={resendingId === u.id}
-                                  className="flex items-center gap-2 px-3 py-2 text-sm text-brand hover:bg-brand/5 w-full text-left disabled:opacity-50"
-                                >
-                                  {resendingId === u.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
-                                  Resend & Renew Link
-                                </button>
-                              </>
-                            )}
-                            <button onClick={() => { handleDelete(u.id); setOpenMenu(null); }} className="flex px-3 py-2 text-sm text-danger hover:bg-danger/5 w-full text-left">Deactivate</button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  {renderUserActions(u)}
                 </td>
               </tr>
             ))}
           </DataTable>
+          </div>
 
           {/* Pagination */}
           {meta.totalPages > 1 && (

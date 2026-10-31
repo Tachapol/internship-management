@@ -258,6 +258,9 @@ export const leaveRequestsApi = {
 
 // ─── Notifications ────────────────────────────────────────────
 export const notificationsApi = {
+  preferences: () => request<import("./types").NotificationPreferencesResponse>("/notifications/preferences"),
+  savePreferences: (preferences: import("./types").NotificationPreferences) =>
+    request<import("./types").NotificationPreferencesResponse>("/notifications/preferences", { method: "PATCH", body: JSON.stringify(preferences) }),
   list: (params?: { read?: boolean; page?: number; limit?: number }) => {
     const q = new URLSearchParams(
       Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))

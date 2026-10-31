@@ -1,10 +1,36 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Notification, NotificationType } from 'database';
+import { EmailService } from '../email/email.service';
+import { NotificationPreferencesDto } from './dto/notification-preferences.dto';
+
+const DEFAULT_PREFERENCES = {
+  leaveAlerts: true, attendanceReminders: true, trainingPlanUpdates: true,
+  announcements: true, emailNotifications: false,
+};
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly emailService: EmailService) {}
+
+  private async readPreferences(userId: string) {
+    const saved = await this.prisma.notificationPreference.findUnique({ where: { userId } });
+    return { ...DEFAULT_PREFERENCES, ...saved };
+  }
+
+  async getPreferences(userId: string) {
+    return { preferences: await this.readPreferences(userId), emailDelivery: this.emailService.getDeliveryStatus() };
+  }
+
+  async savePreferences(userId: string, dto: NotificationPreferencesDto) {
+    // Only preference fields can be written; the authenticated user owns this row.
+    const data = Object.fromEntries(Object.keys(DEFAULT_PREFERENCES)
+      .filter(key => typeof dto[key] === 'boolean').map(key => [key, dto[key]]));
+    await this.prisma.notificationPreference.upsert({
+      where: { userId }, create: { userId, ...data }, update: data,
+    });
+    return this.getPreferences(userId);
+  }
 
   async getNotifications(
     userId: string,
@@ -103,8 +129,15 @@ export class NotificationsService {
     message: string,
     type: NotificationType = NotificationType.INFO,
     metadata?: any,
-  ): Promise<Notification> {
-    return this.prisma.notification.create({
+  ): Promise<Notification | null> {
+    const preferences = await this.readPreferences(userId);
+    const category = metadata?.category === 'announcement' || metadata?.eventId ? 'announcements'
+      : type === NotificationType.LEAVE ? 'leaveAlerts'
+      : type === NotificationType.ATTENDANCE ? 'attendanceReminders'
+      : type === NotificationType.TRAINING ? 'trainingPlanUpdates'
+      : null;
+    if (category && !preferences[category]) return null;
+    const notification = await this.prisma.notification.create({
       data: {
         userId,
         title,
@@ -113,6 +146,13 @@ export class NotificationsService {
         metadata: metadata ? JSON.parse(JSON.stringify(metadata)) : undefined,
       },
     });
+    if (preferences.emailNotifications && this.emailService.getDeliveryStatus().configured) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { email: true, status: true, deletedAt: true } });
+      if (user?.status === 'ACTIVE' && !user.deletedAt) {
+        await this.emailService.sendNotificationEmail(user.email, title);
+      }
+    }
+    return notification;
   }
 
   async broadcast(
@@ -121,22 +161,12 @@ export class NotificationsService {
     type: NotificationType = NotificationType.INFO,
   ): Promise<{ count: number }> {
     const users = await this.prisma.user.findMany({
-      where: { deletedAt: null },
+      where: { deletedAt: null, status: 'ACTIVE' },
       select: { id: true },
     });
 
-    const createPromises = users.map((user) =>
-      this.prisma.notification.create({
-        data: {
-          userId: user.id,
-          title,
-          message,
-          type,
-        },
-      }),
-    );
-
-    await Promise.all(createPromises);
-    return { count: users.length };
+    const results = await Promise.all(users.map(user =>
+      this.createNotification(user.id, title, message, type, { category: 'announcement' })));
+    return { count: results.filter(Boolean).length };
   }
 }

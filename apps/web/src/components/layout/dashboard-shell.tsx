@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BrandMark } from "../brand-mark";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../../lib/auth-context";
@@ -60,9 +61,7 @@ function Sidebar({
       {/* Logo */}
       <div className="h-16 px-5 border-b border-borderGray flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center text-white font-bold text-sm shadow-sm">
-            D+
-          </div>
+          <BrandMark className="h-8 w-8" />
           <span className="font-bold text-text-primary text-lg tracking-tight">DevPlus</span>
         </div>
         <button

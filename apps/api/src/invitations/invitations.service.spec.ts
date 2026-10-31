@@ -19,7 +19,7 @@ describe('InvitationsService', () => {
 
     const mockPrismaService = {
       company: {
-        findUnique: jest.fn(),
+        findUnique: jest.fn().mockResolvedValue({ id: 'company-uuid', name: 'Acme Corp', status: 'ACTIVE' }),
       },
       invitation: {
         create: jest.fn(),
@@ -58,7 +58,7 @@ describe('InvitationsService', () => {
   describe('createInvitation', () => {
     it('should create an invitation successfully', async () => {
       usersService.findByEmail.mockResolvedValue(null);
-      (prismaService.company.findUnique as jest.Mock).mockResolvedValue({ id: 'company-uuid', name: 'Acme Corp' });
+      (prismaService.company.findUnique as jest.Mock).mockResolvedValue({ id: 'company-uuid', name: 'Acme Corp', status: 'ACTIVE' });
       usersService.create.mockResolvedValue({} as any);
       (prismaService.invitation.create as jest.Mock).mockResolvedValue({ id: 'invitation-uuid' });
       emailService.sendInvitationEmail.mockResolvedValue(true);
@@ -82,7 +82,7 @@ describe('InvitationsService', () => {
     });
 
     it('should throw ConflictException if user already exists', async () => {
-      usersService.findByEmail.mockResolvedValue({ id: 'existing-id' } as any);
+      usersService.findByEmail.mockResolvedValue({ id: 'existing-id', status: 'ACTIVE' } as any);
 
       await expect(
         service.createInvitation(
@@ -112,6 +112,22 @@ describe('InvitationsService', () => {
           'admin-uuid',
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('active organisation validation', () => {
+    it.each([null, 'PENDING_SETUP'])("rejects inactive companies before changing an invitation or user (%s)", async status => {
+      usersService.findByEmail.mockResolvedValue(status ? { id: 'existing', status } as any : null);
+      (prismaService.company.findUnique as jest.Mock).mockResolvedValue({ id: 'company-uuid', status: 'INACTIVE' });
+      await expect(service.createInvitation({ email: 'new@example.com', name: 'New', role: 'STUDENT', companyId: 'company-uuid' }, 'admin')).rejects.toThrow(BadRequestException);
+      expect(usersService.create).not.toHaveBeenCalled();
+      expect(prismaService.invitation.create).not.toHaveBeenCalled();
+      expect(emailService.sendInvitationEmail).not.toHaveBeenCalled();
+    });
+    it('rejects soft-deleted companies even if the status is active', async () => {
+      (prismaService.company.findUnique as jest.Mock).mockResolvedValue({ status: 'ACTIVE', deletedAt: new Date() });
+      await expect(service.createInvitation({ email: 'new@example.com', name: 'New', role: 'STUDENT', companyId: 'company-uuid' }, 'admin')).rejects.toThrow(BadRequestException);
+      expect(emailService.sendInvitationEmail).not.toHaveBeenCalled();
     });
   });
 

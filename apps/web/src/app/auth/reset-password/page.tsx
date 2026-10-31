@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BrandMark } from "../../../components/brand-mark";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "../../../lib/api";
 import { Loader2, ArrowLeft, Lock, CheckCircle2, Eye, EyeOff } from "lucide-react";
@@ -89,9 +90,7 @@ function ResetPasswordForm() {
           ))}
         </div>
         <div className="relative text-white text-center space-y-6 max-w-md">
-          <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center mx-auto shadow-xl">
-            <span className="font-bold text-white text-2xl">D+</span>
-          </div>
+          <BrandMark className="h-16 w-16 mx-auto rounded-2xl bg-white p-2" />
           <div>
             <h1 className="text-4xl font-bold mb-3">DevPlus</h1>
             <p className="text-white/80 text-lg leading-relaxed">
@@ -106,9 +105,7 @@ function ResetPasswordForm() {
         <div className="w-full max-w-md space-y-6">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2.5 justify-center">
-            <div className="w-10 h-10 rounded-xl bg-brand flex items-center justify-center shadow-sm">
-              <span className="text-white font-bold text-sm">D+</span>
-            </div>
+            <BrandMark className="h-10 w-10" />
             <span className="font-bold text-text-primary text-xl">DevPlus</span>
           </div>
 

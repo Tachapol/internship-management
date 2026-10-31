@@ -116,6 +116,7 @@ export interface TrainingPlan {
   createdById: string;
   createdBy?: { id: string; name: string } | null;
   modules: TrainingPlanModule[];
+  cohortProgress?: { students: number; total: number; completed: number; overdue: number; rate: number | null };
   createdAt: string;
   updatedAt: string;
 }
@@ -147,7 +148,20 @@ export interface AttendanceReport {
   absent: number;
   onLeave: number;
   total: number;
-  attendanceRate: number;
+  attendanceRate: number | null;
+}
+
+export interface NotificationPreferences {
+  leaveAlerts: boolean;
+  attendanceReminders: boolean;
+  trainingPlanUpdates: boolean;
+  announcements: boolean;
+  emailNotifications: boolean;
+}
+
+export interface NotificationPreferencesResponse {
+  preferences: NotificationPreferences;
+  emailDelivery: { configured: boolean; senderDomain: string | null };
 }
 
 // ─── Leave Request ───────────────────────────────────────────
@@ -199,7 +213,10 @@ export interface BdTeamStats {
   role: "BD_TEAM";
   companyOverview: { companyId: string; name: string; status: CompanyStatus; studentCount: number; mentorCount: number }[];
   attendanceStats: Record<AttendanceStatus, number>;
-  leaveStats: { SICK: number; CASUAL: number; ANNUAL: number; PENDING: number; APPROVED: number; REJECTED: number };
+  leaveStats: {
+    byType: Record<LeaveType, number>;
+    byStatus: Record<LeaveStatus, number>;
+  };
   mentorPerformance: { mentorId: string; name: string; email: string; studentCount: number; checkInRate: number }[];
   totalStudents: number;
   totalMentors: number;

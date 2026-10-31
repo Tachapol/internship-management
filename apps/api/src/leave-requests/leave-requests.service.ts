@@ -216,6 +216,10 @@ export class LeaveRequestsService {
       console.error('Failed to sync leave request to attendance records:', err);
     }
 
+    await this.notificationsService.createNotification(
+      request.studentId, 'Leave request approved', 'Your leave request has been approved.',
+      NotificationType.LEAVE, { leaveRequestId: request.id },
+    ).catch(error => console.error('Could not send leave decision notification:', error));
     return updatedRequest;
   }
 
@@ -232,7 +236,7 @@ export class LeaveRequestsService {
       throw new BadRequestException(`Cannot reject request that is already ${request.status.toLowerCase()}`);
     }
 
-    return this.prisma.leaveRequest.update({
+    const updatedRequest = await this.prisma.leaveRequest.update({
       where: { id },
       data: {
         status: LeaveStatus.REJECTED,
@@ -241,5 +245,10 @@ export class LeaveRequestsService {
         reviewedAt: new Date(),
       },
     });
+    await this.notificationsService.createNotification(
+      request.studentId, 'Leave request rejected', 'Your leave request has been reviewed. Sign in to view the decision.',
+      NotificationType.LEAVE, { leaveRequestId: request.id },
+    ).catch(error => console.error('Could not send leave decision notification:', error));
+    return updatedRequest;
   }
 }

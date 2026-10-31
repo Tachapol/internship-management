@@ -14,6 +14,7 @@ describe('DashboardService', () => {
         findMany: jest.fn(),
       },
       user: {
+        findUnique: jest.fn().mockResolvedValue({ teamId: 'team-1' }),
         count: jest.fn(),
         findMany: jest.fn(),
       },
@@ -27,6 +28,8 @@ describe('DashboardService', () => {
         groupBy: jest.fn(),
         findMany: jest.fn(),
       },
+      trainingPlanModule: { count: jest.fn().mockResolvedValue(10), findMany: jest.fn().mockResolvedValue(Array.from({ length: 5 }, (_, i) => ({ id: `module-${i}`, weekNumber: i + 1, progresses: i < 3 ? [{ status: 'COMPLETED' }] : [] }))) },
+      studentModuleProgress: { count: jest.fn().mockResolvedValue(7) },
       trainingPlan: {
         count: jest.fn(),
         findMany: jest.fn(),
@@ -66,10 +69,10 @@ describe('DashboardService', () => {
 
       expect(result).toBeDefined();
       expect(result.role).toBe(UserRole.SUPER_ADMIN);
-      expect(result.metrics.totalCompanies).toBe(10);
-      expect(result.metrics.totalStudents).toBe(50);
-      expect(result.metrics.attendanceRate).toBe(85);
-      expect(result.metrics.pendingLeaves).toBe(5);
+      expect(result.totalCompanies).toBe(10);
+      expect(result.totalStudents).toBe(50);
+      expect(result.attendanceRate).toBe(85);
+      expect(result.pendingLeaves).toBe(5);
     });
   });
 
@@ -77,7 +80,7 @@ describe('DashboardService', () => {
     it('should return BD Team metrics successfully', async () => {
       const p = prisma as any;
       p.company.findMany.mockResolvedValue([
-        { id: 'company-1', name: 'Acme Corp', status: 'ACTIVE' },
+        { id: 'company-1', name: 'Acme Corp', status: 'ACTIVE', users: [...Array.from({ length: 10 }, () => ({ role: 'STUDENT' })), { role: 'MENTOR' }, { role: 'MENTOR' } ] },
       ]);
       p.user.count.mockResolvedValueOnce(10); // Acme student count
       p.user.count.mockResolvedValueOnce(2); // Acme mentor count
@@ -85,14 +88,7 @@ describe('DashboardService', () => {
         { status: 'PRESENT', _count: { _all: 30 } },
         { status: 'LATE', _count: { _all: 5 } },
       ]);
-      p.user.findMany.mockResolvedValue([
-        { id: 'mentor-1', name: 'Mentor One', email: 'mentor@corp.com' },
-      ]);
-      p.user.findMany.mockResolvedValueOnce([
-        { id: 'student-1' },
-      ]); // assigned students list
-      p.attendance.count.mockResolvedValueOnce(10); // totalChecks
-      p.attendance.count.mockResolvedValueOnce(9); // positiveChecks
+      p.user.findMany.mockResolvedValue([{ id: 'mentor-1', name: 'Mentor One', students: [{ id: 'student-1', attendances: [...Array.from({ length: 9 }, () => ({ status: 'PRESENT' })), { status: 'ABSENT' }] }] }]);
 
       p.leaveRequest.groupBy.mockResolvedValueOnce([
         { type: 'SICK', _count: { _all: 3 } },
@@ -116,7 +112,7 @@ describe('DashboardService', () => {
     it('should return Mentor metrics successfully', async () => {
       const p = prisma as any;
       p.user.findMany.mockResolvedValue([
-        { id: 'student-1', name: 'Student One', email: 'student1@corp.com', status: 'ACTIVE' },
+        { id: 'student-1', name: 'Student One', email: 'student1@corp.com', status: 'ACTIVE', teamId: 'team-1' },
       ]);
       p.attendance.findMany.mockResolvedValue([
         { userId: 'student-1', status: 'PRESENT', checkIn: new Date(), checkOut: null },
@@ -133,8 +129,8 @@ describe('DashboardService', () => {
       expect(result.role).toBe(UserRole.MENTOR);
       expect(result.assignedStudents.length).toBe(1);
       expect(result.attendanceSummary.checkedIn).toBe(1);
-      expect(result.pendingRequests.length).toBe(1);
-      expect(result.trainingPlanProgress.completionRate).toBe(70);
+      expect(result.pendingLeaveRequests.length).toBe(1);
+      expect(result.trainingPlanProgress.rate).toBe(70);
     });
   });
 
@@ -165,7 +161,7 @@ describe('DashboardService', () => {
       expect(result.attendanceSummary.PRESENT).toBe(8);
       expect(result.leaveStatus.length).toBe(1);
       expect(result.trainingPlanProgress.rate).toBe(60);
-      expect(result.notifications.length).toBe(1);
+      expect(result.recentNotifications.length).toBe(1);
     });
   });
 });

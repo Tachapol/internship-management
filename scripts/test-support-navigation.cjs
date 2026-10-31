@@ -1,0 +1,18 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const ts = require('typescript');
+const source = fs.readFileSync(path.join(__dirname, '../apps/web/src/lib/support-navigation.ts'), 'utf8');
+const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
+const moduleUnderTest = { exports: {} };
+vm.runInNewContext(compiled.outputText, { exports: moduleUnderTest.exports, URL, URLSearchParams });
+const { supportReturnPath } = moduleUnderTest.exports;
+for (const role of ['SUPER_ADMIN', 'BD_TEAM', 'MENTOR']) assert.equal(supportReturnPath(role), '/support-tickets');
+assert.equal(supportReturnPath('STUDENT'), '/support');
+assert.equal(supportReturnPath('BD_TEAM', '/support-tickets?status=IN_REVIEW&priority=HIGH&q=Review'), '/support-tickets?status=IN_REVIEW&priority=HIGH&q=Review');
+assert.equal(supportReturnPath('BD_TEAM', 'https://evil.example/support-tickets'), '/support-tickets');
+assert.equal(supportReturnPath('BD_TEAM', '//evil.example/support-tickets'), '/support-tickets');
+assert.equal(supportReturnPath('STUDENT', '/support-tickets'), '/support');
+assert.equal(supportReturnPath('BD_TEAM', '/support-tickets?redirect=https://evil.example'), '/support-tickets');
+console.log('Passed 9 navigation checks: role destinations, filters, and external-return URL rejection.');

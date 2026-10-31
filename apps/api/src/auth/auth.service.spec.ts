@@ -20,12 +20,14 @@ describe('AuthService', () => {
     };
 
     const mockPrismaService = {
+      refreshToken: { create: jest.fn(), deleteMany: jest.fn() },
       passwordResetToken: {
         create: jest.fn(),
         findUnique: jest.fn(),
         update: jest.fn(),
       },
       user: {
+        findUnique: jest.fn(),
         update: jest.fn(),
       },
       $transaction: jest.fn((promises) => Promise.all(promises)),
@@ -69,6 +71,7 @@ describe('AuthService', () => {
         avatarUrl: null,
         role: 'STUDENT' as const,
         status: 'ACTIVE' as const,
+        deletedAt: null,
         passwordHash: await bcrypt.hash('password123', 10),
         companyId: 'company-uuid',
         createdAt: new Date(),
@@ -84,7 +87,7 @@ describe('AuthService', () => {
         password: 'password123',
       });
 
-      expect(result.token).toBe('mock-jwt-token');
+      expect(result.accessToken).toBe('mock-jwt-token');
       expect(result.user.email).toBe('test@example.com');
       expect(usersService.findByEmail).toHaveBeenCalledWith('test@example.com');
     });
@@ -105,6 +108,7 @@ describe('AuthService', () => {
         avatarUrl: null,
         role: 'STUDENT' as const,
         status: 'ACTIVE' as const,
+        deletedAt: null,
         passwordHash: await bcrypt.hash('correctpassword', 10),
         companyId: 'company-uuid',
         createdAt: new Date(),
@@ -151,6 +155,7 @@ describe('AuthService', () => {
         avatarUrl: null,
         role: 'STUDENT' as const,
         status: 'ACTIVE' as const,
+        deletedAt: null,
         passwordHash: 'hashed',
         companyId: 'company-uuid',
         createdAt: new Date(),

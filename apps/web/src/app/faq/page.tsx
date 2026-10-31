@@ -123,10 +123,10 @@ const FAQ_CATEGORIES: FaqCategory[] = [
               <strong>SICK</strong> — For medical illness or health-related absences.
             </li>
             <li>
-              <strong>PERSONAL</strong> — For personal matters that require time away.
+              <strong>CASUAL</strong> — For personal matters that require time away.
             </li>
             <li>
-              <strong>EMERGENCY</strong> — For urgent, unforeseen circumstances.
+              <strong>ANNUAL</strong> — For planned holidays or annual leave.
             </li>
             <li>
               <strong>OTHER</strong> — For any reason not covered by the above categories.
@@ -186,8 +186,8 @@ const FAQ_CATEGORIES: FaqCategory[] = [
         question: "How is training progress tracked?",
         answer: (
           <p>
-            Each training week has a status of either <strong>PENDING</strong>,{" "}
-            <strong>IN_PROGRESS</strong>, or <strong>COMPLETED</strong>. Your
+            Each training module has a status of <strong>ACTIVE</strong>,{" "}
+            <strong>COMPLETED</strong>, or <strong>ARCHIVED</strong>. Your
             mentor updates the week statuses as you progress through the syllabus.
             Your overall completion percentage is shown on your Dashboard KPI
             cards.
@@ -281,8 +281,10 @@ const FAQ_CATEGORIES: FaqCategory[] = [
           <p>
             Notification preferences can be adjusted from the{" "}
             <strong>Settings</strong> page. You can toggle different categories
-            of alerts. Note that critical system notifications (e.g., leave
-            decisions) cannot be fully disabled to ensure you stay informed.
+            of alerts, then click <strong>Save Notification Preferences</strong>.
+            Saved choices apply to new notifications across your devices; existing
+            notifications remain in your inbox. Email notifications are a separate
+            opt-in. Support ticket messages are not controlled by these category switches.
           </p>
         ),
       },

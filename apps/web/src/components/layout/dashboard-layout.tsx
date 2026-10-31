@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BrandMark } from "../brand-mark";
 import {
   LayoutDashboard,
   Users,
@@ -40,9 +41,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <aside className="hidden lg:flex flex-col w-64 border-r border-borderGray bg-white">
         <div className="h-16 px-6 border-b border-borderGray flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center font-bold text-white shadow-sm">
-              D+
-            </span>
+            <BrandMark className="h-8 w-8" />
             <span className="text-h1 tracking-tight text-text-primary">DevPlus</span>
           </div>
           <Badge variant="success" className="h-5 py-0 px-1.5 font-medium text-[10px]">v1.0</Badge>
@@ -99,9 +98,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         >
           <div className="h-16 px-6 border-b border-borderGray flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center font-bold text-white">
-                D+
-              </span>
+              <BrandMark className="h-8 w-8" />
               <span className="text-h1 tracking-tight">DevPlus</span>
             </div>
             <button
