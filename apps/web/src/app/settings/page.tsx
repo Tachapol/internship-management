@@ -28,19 +28,47 @@ function SettingSection({ icon: Icon, title, description, children }: {
   );
 }
 
-function ToggleSetting({ label, description, defaultChecked }: { label: string; description: string; defaultChecked?: boolean }) {
-  const [checked, setChecked] = React.useState(defaultChecked ?? false);
+function ToggleSetting({
+  label,
+  description,
+  checked,
+  onChange,
+  disabled,
+  badge,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  badge?: string;
+}) {
   return (
     <div className="flex items-center justify-between py-3 border-b border-borderGray last:border-0">
-      <div>
-        <p className="text-sm font-semibold text-text-primary">{label}</p>
-        <p className="text-xs text-text-muted mt-0.5">{description}</p>
+      <div className="pr-4">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-text-primary">{label}</p>
+          {badge && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide bg-amber-100 text-amber-800 border border-amber-200">
+              {badge}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-text-muted mt-0.5 leading-relaxed">{description}</p>
       </div>
       <button
-        onClick={() => setChecked(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${checked ? "bg-brand" : "bg-borderGray"}`}
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${
+          disabled ? "opacity-50 cursor-not-allowed bg-borderGray" : checked ? "bg-brand" : "bg-borderGray"
+        }`}
       >
-        <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${checked ? "translate-x-5" : ""}`} />
+        <div
+          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
+            checked ? "translate-x-5" : ""
+          }`}
+        />
       </button>
     </div>
   );
@@ -58,6 +86,44 @@ export default function SettingsPage() {
   const [pwLoading, setPwLoading] = React.useState(false);
   const [pwSuccess, setPwSuccess] = React.useState(false);
   const [pwError, setPwError] = React.useState("");
+
+  const [notifPrefs, setNotifPrefs] = React.useState({
+    leaveAlerts: true,
+    attendanceReminders: true,
+    trainingPlanUpdates: true,
+    announcements: true,
+    emailNotifications: false,
+  });
+  const [notifLoading, setNotifLoading] = React.useState(false);
+  const [notifSuccess, setNotifSuccess] = React.useState(false);
+
+  React.useEffect(() => {
+    if (user?.id) {
+      try {
+        const saved = localStorage.getItem(`devplus_notif_prefs_${user.id}`);
+        if (saved) {
+          setNotifPrefs(JSON.parse(saved));
+        }
+      } catch {}
+    }
+  }, [user?.id]);
+
+  function handleSaveNotifPrefs(e: React.FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setNotifLoading(true);
+    setNotifSuccess(false);
+    try {
+      localStorage.setItem(`devplus_notif_prefs_${user.id}`, JSON.stringify(notifPrefs));
+      setTimeout(() => {
+        setNotifLoading(false);
+        setNotifSuccess(true);
+        setTimeout(() => setNotifSuccess(false), 3000);
+      }, 250);
+    } catch {
+      setNotifLoading(false);
+    }
+  }
 
   React.useEffect(() => {
     if (user) {
@@ -252,13 +318,58 @@ export default function SettingsPage() {
 
         {/* Notifications */}
         <SettingSection icon={Bell} title="Notification Preferences" description="Control what alerts you receive">
-          <div>
-            <ToggleSetting label="Leave Request Alerts" description="Notify when a leave request is submitted or reviewed" defaultChecked />
-            <ToggleSetting label="Attendance Reminders" description="Daily reminder if check-in is not recorded by 9:00 AM" defaultChecked />
-            <ToggleSetting label="Training Plan Updates" description="Notify when a mentor assigns or updates a training plan" defaultChecked />
-            <ToggleSetting label="System Announcements" description="Important system-wide announcements and maintenance notices" />
-            <ToggleSetting label="Email Notifications" description="Receive email summaries for important events" />
-          </div>
+          <form onSubmit={handleSaveNotifPrefs} className="space-y-4">
+            <div>
+              <ToggleSetting
+                label="Leave Request Alerts"
+                description="In-app notification when a student submits a leave request or a review is completed"
+                checked={notifPrefs.leaveAlerts}
+                onChange={checked => setNotifPrefs(p => ({ ...p, leaveAlerts: checked }))}
+              />
+              <ToggleSetting
+                label="Attendance Reminders"
+                description="Daily in-app reminder when internship check-in is not yet logged"
+                checked={notifPrefs.attendanceReminders}
+                onChange={checked => setNotifPrefs(p => ({ ...p, attendanceReminders: checked }))}
+              />
+              <ToggleSetting
+                label="Training Plan Updates"
+                description="Alerts when weekly syllabus tasks are assigned, reviewed, or submitted"
+                checked={notifPrefs.trainingPlanUpdates}
+                onChange={checked => setNotifPrefs(p => ({ ...p, trainingPlanUpdates: checked }))}
+              />
+              <ToggleSetting
+                label="System Announcements"
+                description="Broad announcements, schedule changes, and platform notices"
+                checked={notifPrefs.announcements}
+                onChange={checked => setNotifPrefs(p => ({ ...p, announcements: checked }))}
+              />
+              <ToggleSetting
+                label="Email Notifications"
+                description="Receive email dispatch for important alerts. (Requires verified custom domain at resend.com/domains)"
+                checked={notifPrefs.emailNotifications}
+                onChange={checked => setNotifPrefs(p => ({ ...p, emailNotifications: checked }))}
+                badge="Sandbox Mode"
+              />
+            </div>
+
+            {notifSuccess && (
+              <div className="flex items-center gap-2 text-success text-xs font-semibold">
+                <CheckCircle className="h-4 w-4" /> Notification preferences saved successfully
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={notifLoading}
+                className="h-9 px-5 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-hover transition-all shadow-sm active:scale-[0.98] disabled:opacity-60 flex items-center gap-2"
+              >
+                {notifLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Save Notification Preferences
+              </button>
+            </div>
+          </form>
         </SettingSection>
 
         {/* System (SUPER_ADMIN only) */}

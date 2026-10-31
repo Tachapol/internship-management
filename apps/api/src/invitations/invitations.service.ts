@@ -19,7 +19,51 @@ export class InvitationsService {
   async createInvitation(dto: CreateInvitationDto, invitedById: string): Promise<Invitation & { emailSent: boolean }> {
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      if (existingUser.status === UserStatus.ACTIVE) {
+        throw new ConflictException('User with this email already has an active account');
+      }
+      // If user is PENDING_SETUP, revoke previous invitations and issue a fresh one
+      await this.prisma.invitation.updateMany({
+        where: { email: dto.email, status: { in: ['PENDING', 'EXPIRED'] } },
+        data: { status: 'REVOKED' },
+      });
+
+      await this.usersService.update(existingUser.id, {
+        name: dto.name,
+        role: dto.role,
+        companyId: dto.companyId,
+        mentorId: dto.mentorId || null,
+        status: UserStatus.PENDING_SETUP,
+      });
+
+      const company = await this.prisma.company.findUnique({
+        where: { id: dto.companyId },
+      });
+      if (!company) {
+        throw new NotFoundException('Company not found');
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const invitation = await this.prisma.invitation.create({
+        data: {
+          email: dto.email,
+          role: dto.role,
+          token,
+          expiresAt,
+          companyId: dto.companyId,
+          invitedById,
+        },
+      });
+
+      const emailSent = await this.emailService.sendInvitationEmail(dto.email, token, company.name);
+
+      return {
+        ...invitation,
+        emailSent,
+      };
     }
 
     const company = await this.prisma.company.findUnique({
@@ -62,11 +106,62 @@ export class InvitationsService {
     };
   }
 
-  async getPendingTokenByEmail(email: string): Promise<{ token: string } | null> {
+  async resendInvitation(email: string, invitedById: string): Promise<Invitation & { emailSent: boolean }> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException(`No user found with email ${email}`);
+    }
+
+    if (user.status === UserStatus.ACTIVE) {
+      throw new BadRequestException('User has already completed account setup and is active');
+    }
+
+    if (!user.companyId) {
+      throw new BadRequestException('User has no assigned organization');
+    }
+
+    const company = await this.prisma.company.findUnique({
+      where: { id: user.companyId },
+    });
+    if (!company) {
+      throw new NotFoundException('Assigned company not found');
+    }
+
+    // Revoke all previous pending and expired invitations
+    await this.prisma.invitation.updateMany({
+      where: { email, status: { in: ['PENDING', 'EXPIRED'] } },
+      data: { status: 'REVOKED' },
+    });
+
+    // Create new token with 7 days expiration
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const invitation = await this.prisma.invitation.create({
+      data: {
+        email: user.email,
+        role: user.role,
+        token,
+        expiresAt,
+        companyId: user.companyId,
+        invitedById,
+      },
+    });
+
+    const emailSent = await this.emailService.sendInvitationEmail(user.email, token, company.name);
+
+    return {
+      ...invitation,
+      emailSent,
+    };
+  }
+
+  async getPendingTokenByEmail(email: string): Promise<{ token: string; expiresAt: Date; status: string } | null> {
     const invitation = await this.prisma.invitation.findFirst({
       where: { email, status: 'PENDING' },
       orderBy: { createdAt: 'desc' },
-      select: { token: true },
+      select: { token: true, expiresAt: true, status: true },
     });
     return invitation ?? null;
   }

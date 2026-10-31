@@ -7,7 +7,7 @@ import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { usersApi, companiesApi, invitationsApi } from "../../lib/api";
 import type { User, UserRole } from "../../lib/types";
 import { PageHeader, StatusBadge, EmptyState, ErrorState, DataTable, Card } from "../../components/ui/shared";
-import { Users, UserPlus, Search, MoreVertical, Mail, Loader2, Link2, Check, Upload, Copy, CheckCircle2, AlertCircle } from "lucide-react";
+import { Users, UserPlus, Search, MoreVertical, Mail, Loader2, Link2, Check, Upload, Copy, CheckCircle2, AlertCircle, RotateCw } from "lucide-react";
 import { formatDate } from "../../lib/utils";
 import { useAuth } from "../../lib/auth-context";
 import { ImportUsersModal } from "../../components/users/ImportUsersModal";
@@ -241,6 +241,7 @@ function UsersPageContent() {
   const [showInviteModal, setShowInviteModal] = React.useState(false);
   const [showImportModal, setShowImportModal] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [resendingId, setResendingId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const r = searchParams.get("role");
@@ -254,7 +255,7 @@ function UsersPageContent() {
     try {
       const res = await invitationsApi.getLink(u.email);
       if (!res?.token) {
-        alert("No pending invitation found for this user.");
+        alert("No pending invitation found for this user. You can generate a new one using 'Resend & Renew Link'.");
         return;
       }
       const link = `${window.location.origin}/auth/accept-invitation?token=${res.token}`;
@@ -263,6 +264,22 @@ function UsersPageContent() {
       setTimeout(() => setCopiedId(null), 2500);
     } catch {
       alert("Failed to copy link.");
+    }
+  }
+
+  async function handleResendInvite(u: User) {
+    try {
+      setResendingId(u.id);
+      const res = await invitationsApi.resend(u.email);
+      const link = `${window.location.origin}/auth/accept-invitation?token=${res.token}`;
+      await navigator.clipboard.writeText(link);
+      setCopiedId(u.id);
+      setTimeout(() => setCopiedId(null), 3000);
+      alert(`New invitation generated!\n\nLink copied to clipboard:\n${link}\n\n(Previous links have been revoked. This link is valid for 7 days.)`);
+    } catch (err: any) {
+      alert(err?.message || "Failed to resend invitation.");
+    } finally {
+      setResendingId(null);
     }
   }
 
@@ -442,13 +459,23 @@ function UsersPageContent() {
                         {currentUser && (currentUser.role === "SUPER_ADMIN" || currentUser.role === "BD_TEAM") && (
                           <>
                             {u.status === "PENDING_SETUP" && (
-                              <button
-                                onClick={() => { handleCopyLink(u); setOpenMenu(null); }}
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-brand hover:bg-brand/5 w-full text-left"
-                              >
-                                {copiedId === u.id ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
-                                {copiedId === u.id ? "Copied!" : "Copy Invite Link"}
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => { handleCopyLink(u); setOpenMenu(null); }}
+                                  className="flex items-center gap-2 px-3 py-2 text-sm text-brand hover:bg-brand/5 w-full text-left"
+                                >
+                                  {copiedId === u.id ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+                                  {copiedId === u.id ? "Copied!" : "Copy Invite Link"}
+                                </button>
+                                <button
+                                  onClick={() => { handleResendInvite(u); setOpenMenu(null); }}
+                                  disabled={resendingId === u.id}
+                                  className="flex items-center gap-2 px-3 py-2 text-sm text-brand hover:bg-brand/5 w-full text-left disabled:opacity-50"
+                                >
+                                  {resendingId === u.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
+                                  Resend & Renew Link
+                                </button>
+                              </>
                             )}
                             <button onClick={() => { handleDelete(u.id); setOpenMenu(null); }} className="flex px-3 py-2 text-sm text-danger hover:bg-danger/5 w-full text-left">Deactivate</button>
                           </>

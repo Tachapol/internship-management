@@ -33,6 +33,25 @@ export class InvitationsController {
     return this.invitationsService.createInvitation(createInvitationDto, currentUser.id);
   }
 
+  @Post('resend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Resend invitation email',
+    description: 'Revokes previous invitation tokens and generates a new valid token with 7-day expiration (Super Admin / BD Team only).',
+  })
+  @ApiResponse({ status: 201, description: 'New invitation created and sent.' })
+  async resend(
+    @Body() body: { email: string },
+    @GetUser() currentUser: { id: string; role: UserRole },
+  ) {
+    if (!body.email) {
+      throw new BadRequestException('Email is required');
+    }
+    return this.invitationsService.resendInvitation(body.email, currentUser.id);
+  }
+
   @Get('verify')
   @ApiOperation({
     summary: 'Verify invitation token',

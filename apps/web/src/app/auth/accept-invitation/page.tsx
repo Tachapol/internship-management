@@ -117,11 +117,19 @@ function AcceptInvitationForm() {
               <AlertCircle className="h-7 w-7" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl font-bold text-text-primary">Invitation Link Invalid</h2>
+              <h2 className="text-xl font-bold text-text-primary">Invitation Link Expired or Invalid</h2>
               <p className="text-text-muted text-sm leading-relaxed">
                 {verifyError}
               </p>
             </div>
+
+            <div className="bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 text-left text-xs text-amber-900 leading-relaxed">
+              <p className="font-semibold mb-1">Need a new invitation link?</p>
+              <p>
+                Invitation tokens expire after 7 days or when a newer link is generated. Please reach out to your internship coordinator or BD administrator to request a renewed invitation link.
+              </p>
+            </div>
+
             <button
               onClick={() => router.push("/auth/login")}
               className="w-full h-11 bg-brand hover:bg-brand-hover text-white font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center"
