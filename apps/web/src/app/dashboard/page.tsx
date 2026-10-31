@@ -143,14 +143,14 @@ function SuperAdminDashboard({ data, onRefresh }: { data: SuperAdminStats; onRef
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Total Companies" value={data.totalCompanies} sub="Partner organization ecosystem"
-          icon={Building2} variant="orange" href="/companies" />
+          icon={Building2} href="/companies" />
         <KpiCard label="Active Interns"
           value={<>{data.activeStudents}<span className="text-sm font-semibold text-text-muted"> / {data.totalStudents}</span></>}
-          sub="Internship status active" icon={Users} variant="violet" href="/users?role=STUDENT" />
+          sub="Internship status active" icon={Users} href="/users?role=STUDENT" />
         <KpiCard label="System Mentors" value={data.totalMentors} sub="Ecosystem supervisors"
-          icon={GraduationCap} variant="emerald" href="/mentors" />
+          icon={GraduationCap} href="/mentors" />
         <KpiCard label="Total Training Plans" value={data.totalTrainingPlans} sub="Aggregated syllabus weeks"
-          icon={BookOpen} variant="blue" href="/training-plans" />
+          icon={BookOpen} href="/training-plans" />
       </div>
 
       {/* Main Grid */}
@@ -453,10 +453,10 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
         <>
           {/* Metrics Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard label="Active Partnerships" value={data.companyOverview.filter(c => c.status === "ACTIVE").length} icon={Building2} variant="orange" href="/companies" />
-            <KpiCard label="Total Students" value={data.totalStudents} icon={Users} variant="violet" href="/users?role=STUDENT" />
-            <KpiCard label="Total Mentors" value={data.totalMentors} icon={GraduationCap} variant="emerald" href="/users?role=MENTOR" />
-            <KpiCard label="Total Training Plans" value={data.totalTrainingPlans} icon={BookOpen} variant="blue" href="/training-plans" />
+            <KpiCard label="Active Partnerships" value={data.companyOverview.filter(c => c.status === "ACTIVE").length} icon={Building2} href="/companies" />
+            <KpiCard label="Total Students" value={data.totalStudents} icon={Users} href="/users?role=STUDENT" />
+            <KpiCard label="Total Mentors" value={data.totalMentors} icon={GraduationCap} href="/users?role=MENTOR" />
+            <KpiCard label="Total Training Plans" value={data.totalTrainingPlans} icon={BookOpen} href="/training-plans" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -968,14 +968,14 @@ function MentorDashboard({ data, onRefresh }: { data: MentorStats; onRefresh: ()
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard label="Assigned Interns" value={data.assignedStudents.length} icon={Users} variant="violet" href="/users?role=STUDENT" />
+        <KpiCard label="Assigned Interns" value={data.assignedStudents.length} icon={Users} href="/users?role=STUDENT" />
         <KpiCard label="Today's Attendance"
           value={`${data.attendanceSummary.checkedIn} / ${data.attendanceSummary.totalExpected}`}
           sub="Expected student presence today"
-          icon={CalendarCheck} variant="emerald" href="/attendance" />
+          icon={CalendarCheck} href="/attendance" />
         <KpiCard label="Training Completion" value={`${data.trainingPlanProgress.rate}%`}
           sub={`${data.trainingPlanProgress.completed} / ${data.trainingPlanProgress.total} weeks finished`}
-          icon={BookOpen} variant="blue" href="/training-plans" />
+          icon={BookOpen} href="/training-plans" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
