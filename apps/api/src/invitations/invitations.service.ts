@@ -16,7 +16,7 @@ export class InvitationsService {
     private emailService: EmailService,
   ) {}
 
-  async createInvitation(dto: CreateInvitationDto, invitedById: string): Promise<Invitation> {
+  async createInvitation(dto: CreateInvitationDto, invitedById: string): Promise<Invitation & { emailSent: boolean }> {
     const existingUser = await this.usersService.findByEmail(dto.email);
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
@@ -54,9 +54,12 @@ export class InvitationsService {
       },
     });
 
-    await this.emailService.sendInvitationEmail(dto.email, token, company.name);
+    const emailSent = await this.emailService.sendInvitationEmail(dto.email, token, company.name);
 
-    return invitation;
+    return {
+      ...invitation,
+      emailSent,
+    };
   }
 
   async getPendingTokenByEmail(email: string): Promise<{ token: string } | null> {

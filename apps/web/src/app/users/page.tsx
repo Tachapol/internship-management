@@ -7,7 +7,7 @@ import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { usersApi, companiesApi, invitationsApi } from "../../lib/api";
 import type { User, UserRole } from "../../lib/types";
 import { PageHeader, StatusBadge, EmptyState, ErrorState, DataTable, Card } from "../../components/ui/shared";
-import { Users, UserPlus, Search, MoreVertical, Mail, Loader2, Link2, Check, Upload } from "lucide-react";
+import { Users, UserPlus, Search, MoreVertical, Mail, Loader2, Link2, Check, Upload, Copy, CheckCircle2, AlertCircle } from "lucide-react";
 import { formatDate } from "../../lib/utils";
 import { useAuth } from "../../lib/auth-context";
 import { ImportUsersModal } from "../../components/users/ImportUsersModal";
@@ -36,6 +36,8 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
   const [loading, setLoading] = React.useState(false);
   const [loadingCompanies, setLoadingCompanies] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [successData, setSuccessData] = React.useState<{ email: string; token?: string; emailSent?: boolean } | null>(null);
+  const [copied, setCopied] = React.useState(false);
 
   React.useEffect(() => {
     companiesApi
@@ -61,9 +63,13 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
     setLoading(true);
     setError("");
     try {
-      await usersApi.invite({ email, role, companyId });
+      const res: any = await usersApi.invite({ email, role, companyId });
+      setSuccessData({
+        email: email.trim(),
+        token: res?.token,
+        emailSent: res?.emailSent,
+      });
       onDone();
-      onClose();
     } catch (err: any) {
       setError(err?.message || "Failed to send invitation.");
     } finally {
@@ -71,73 +77,148 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
     }
   }
 
+  async function handleCopyInviteLink() {
+    if (!successData?.token) return;
+    const inviteLink = `${window.location.origin}/auth/accept-invitation?token=${successData.token}`;
+    await navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  }
+
+  const generatedInviteLink = successData?.token
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/auth/accept-invitation?token=${successData.token}`
+    : "";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 border border-borderGray">
-        <div>
-          <h3 className="font-bold text-text-primary text-base">Invite New User</h3>
-          <p className="text-xs text-text-muted mt-0.5">Send onboarding invitation email to a new member.</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="text-xs font-semibold text-text-primary block mb-1">Email Address *</label>
-            <input
-              required
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="e.g. intern@acme.com"
-              className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-text-primary block mb-1">System Role *</label>
-            <select
-              value={role}
-              onChange={e => setRole(e.target.value as any)}
-              className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-            >
-              <option value="STUDENT">Student / Intern</option>
-              <option value="MENTOR">Mentor Supervisor</option>
-              <option value="BD_TEAM">BD Team Member</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-text-primary block mb-1">Assigned Organisation *</label>
-            {loadingCompanies ? (
-              <div className="h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm flex items-center text-text-muted">
-                <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> Loading companies...
+        {!successData ? (
+          <>
+            <div>
+              <h3 className="font-bold text-text-primary text-base">Invite New User</h3>
+              <p className="text-xs text-text-muted mt-0.5">Send onboarding invitation email to a new member.</p>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-text-primary block mb-1">Email Address *</label>
+                <input
+                  required
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="e.g. intern@acme.com"
+                  className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+                />
               </div>
-            ) : (
-              <select
-                required
-                value={companyId}
-                onChange={e => setCompanyId(e.target.value)}
-                className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-              >
-                {companies.length === 0 ? (
-                  <option value="">No companies registered</option>
+              <div>
+                <label className="text-xs font-semibold text-text-primary block mb-1">System Role *</label>
+                <select
+                  value={role}
+                  onChange={e => setRole(e.target.value as any)}
+                  className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
+                >
+                  <option value="STUDENT">Student / Intern</option>
+                  <option value="MENTOR">Mentor Supervisor</option>
+                  <option value="BD_TEAM">BD Team Member</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-text-primary block mb-1">Assigned Organisation *</label>
+                {loadingCompanies ? (
+                  <div className="h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm flex items-center text-text-muted">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> Loading companies...
+                  </div>
                 ) : (
-                  companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)
+                  <select
+                    required
+                    value={companyId}
+                    onChange={e => setCompanyId(e.target.value)}
+                    className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
+                  >
+                    {companies.length === 0 ? (
+                      <option value="">No companies registered</option>
+                    ) : (
+                      companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)
+                    )}
+                  </select>
                 )}
-              </select>
+              </div>
+              {error && <p className="text-xs text-danger font-medium mt-1">{error}</p>}
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={onClose} className="flex-1 h-9 border border-borderGray rounded-lg text-sm font-medium hover:bg-bgInput transition-colors">
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || loadingCompanies || !companyId}
+                  className="flex-1 h-9 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Send Invite
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-text-primary text-base">Account Created</h3>
+                <p className="text-xs text-text-muted">Invitation for <span className="font-semibold text-text-primary">{successData.email}</span></p>
+              </div>
+            </div>
+
+            <div className={`p-3 rounded-xl border text-xs leading-relaxed ${
+              successData.emailSent
+                ? "bg-emerald-50/70 border-emerald-200 text-emerald-800"
+                : "bg-amber-50/70 border-amber-200 text-amber-900"
+            }`}>
+              {successData.emailSent ? (
+                <p>✅ An invitation email has been dispatched to <strong>{successData.email}</strong>.</p>
+              ) : (
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p>
+                    <strong>Email Delivery Notice:</strong> In development / test environment with unverified domains, email delivery to external inboxes may be restricted by Resend. You can copy the direct registration link below to share directly with the user.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {generatedInviteLink && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-text-primary block">Direct Invitation Link</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={generatedInviteLink}
+                    className="flex-1 h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-xs font-mono text-text-muted select-all focus:outline-none"
+                  />
+                  <button
+                    onClick={handleCopyInviteLink}
+                    className="h-9 px-3.5 bg-brand hover:bg-brand-hover text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shrink-0 active:scale-95"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
             )}
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full h-9 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
-          {error && <p className="text-xs text-danger font-medium mt-1">{error}</p>}
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 h-9 border border-borderGray rounded-lg text-sm font-medium hover:bg-bgInput transition-colors">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || loadingCompanies || !companyId}
-              className="flex-1 h-9 bg-brand hover:bg-brand-hover text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Send Invite
-            </button>
-          </div>
-        </form>
+        )}
       </div>
     </div>
   );
