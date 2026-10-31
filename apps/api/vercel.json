@@ -18,15 +18,6 @@
       ]
     }
   ],
-  "builds": [
-    {
-      "src": "api/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "memory": 1024
-      }
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",
