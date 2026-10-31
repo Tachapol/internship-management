@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { DashboardShell } from "../../components/layout/dashboard-shell";
 import {
   HelpCircle,
@@ -15,7 +14,6 @@ import {
   Bell,
   ShieldCheck,
   MessageSquare,
-  Plus,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -599,30 +597,6 @@ export default function FaqPage() {
           ))}
         </div>
       )}
-
-      {/* Contact Support CTA Card */}
-      <div className="mt-12 p-6 sm:p-8 rounded-2xl border-2 border-brand/25 bg-gradient-to-br from-brand/5 via-white to-amber-50/50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4 text-center sm:text-left flex-col sm:flex-row">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-hover text-white flex items-center justify-center shadow-md shadow-brand/20 shrink-0">
-            <MessageSquare className="h-7 w-7" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-base sm:text-lg font-bold text-text-primary">
-              ยังมีข้อสงสัยหรือไม่? (Still have questions?)
-            </h3>
-            <p className="text-xs sm:text-sm text-text-muted max-w-md">
-              หากไม่พบคำตอบในคำถามที่พบบ่อยด้านบน คุณสามารถเปิด Support Ticket เพื่อสอบถามข้อสงสัยเพิ่มเติมกับ Mentor หรือทีม BD ได้โดยตรง
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/support?new=true"
-          className="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-bold shadow-md shadow-brand/25 hover:shadow-brand/35 hover:-translate-y-0.5 active:scale-95 transition-all shrink-0 w-full sm:w-auto"
-        >
-          <Plus className="h-4 w-4" />
-          เปิด Ticket ขอความช่วยเหลือ
-        </Link>
-      </div>
     </DashboardShell>
   );
 }
