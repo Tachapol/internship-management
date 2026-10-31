@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -302,10 +303,8 @@ export class SupportTicketsService {
     user: { id: string; role: UserRole },
     assignedToId?: string,
   ) {
-    const isStaff = isStaffRole(user.role);
-
-    if (!isStaff) {
-      throw new ForbiddenException('Only staff can assign tickets');
+    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.BD_TEAM) {
+      throw new ForbiddenException('Only BD team members or Admins can assign tickets');
     }
 
     const ticket = await this.prisma.supportTicket.findUnique({ where: { id } });
@@ -313,7 +312,39 @@ export class SupportTicketsService {
       throw new NotFoundException('Support ticket not found');
     }
 
-    const targetAssigneeId = assignedToId || user.id;
+    let targetAssigneeId: string | null = null;
+
+    if (assignedToId) {
+      if (assignedToId === '' || assignedToId === 'unassigned') {
+        targetAssigneeId = null;
+      } else {
+        const assignee = await this.prisma.user.findUnique({
+          where: { id: assignedToId, deletedAt: null },
+        });
+
+        if (!assignee) {
+          throw new NotFoundException('Assignee user not found');
+        }
+
+        // Validate: Cannot assign to ticket author (e.g. mentor who submitted it)
+        if (assignee.id === ticket.authorId) {
+          throw new BadRequestException('Cannot assign ticket to the author who submitted it');
+        }
+
+        // Validate: Assignee must be BD_TEAM or SUPER_ADMIN
+        if (assignee.role !== UserRole.BD_TEAM && assignee.role !== UserRole.SUPER_ADMIN) {
+          throw new BadRequestException('Tickets can only be assigned to BD Team or Admin members');
+        }
+
+        targetAssigneeId = assignee.id;
+      }
+    } else if (assignedToId === undefined) {
+      // "Assign to me" (self-assignment)
+      if (user.id === ticket.authorId) {
+        throw new BadRequestException('Cannot assign ticket to yourself as the ticket author');
+      }
+      targetAssigneeId = user.id;
+    }
 
     return this.prisma.supportTicket.update({
       where: { id },

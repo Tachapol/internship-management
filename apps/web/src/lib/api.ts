@@ -316,7 +316,7 @@ export const supportTicketsApi = {
   assign: (id: string, assignedToId?: string) =>
     request<SupportTicket>(`/support-tickets/${id}/assign`, {
       method: "PATCH",
-      body: assignedToId ? JSON.stringify({ assignedToId }) : undefined,
+      body: JSON.stringify(assignedToId !== undefined ? { assignedToId } : {}),
     }),
 };
 

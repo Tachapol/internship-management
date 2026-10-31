@@ -251,6 +251,12 @@ export default function SupportPage() {
     loadTickets();
   }, [loadTickets]);
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("new") === "true") {
+      setShowCreate(true);
+    }
+  }, []);
+
   const handleCreated = (ticket: SupportTicket) => {
     setShowCreate(false);
     setTickets((prev) => [ticket, ...prev]);

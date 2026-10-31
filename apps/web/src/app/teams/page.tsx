@@ -537,7 +537,7 @@ export default function TeamsPage() {
     <DashboardShell title="Teams" breadcrumb={[{ label: "Teams" }]}>
       <PageHeader
         title="Teams"
-        description="Organise company interns into working groups"
+        description={user?.role === "MENTOR" ? "View your assigned team and members" : "Organise company interns into working groups"}
         action={
           canManage && (
             <button

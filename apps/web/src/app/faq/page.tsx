@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { DashboardShell } from "../../components/layout/dashboard-shell";
 import {
   HelpCircle,
@@ -14,6 +15,7 @@ import {
   Bell,
   ShieldCheck,
   MessageSquare,
+  Plus,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -598,26 +600,28 @@ export default function FaqPage() {
         </div>
       )}
 
-      {/* Contact Support Footer */}
-      <div className="mt-12 p-6 rounded-2xl border border-brand/20 bg-gradient-to-br from-brand-light/60 to-white flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-brand/15 flex items-center justify-center shrink-0">
-            <MessageSquare className="h-5 w-5 text-brand" />
+      {/* Contact Support CTA Card */}
+      <div className="mt-12 p-6 sm:p-8 rounded-2xl border-2 border-brand/25 bg-gradient-to-br from-brand/5 via-white to-amber-50/50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4 text-center sm:text-left flex-col sm:flex-row">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand to-brand-hover text-white flex items-center justify-center shadow-md shadow-brand/20 shrink-0">
+            <MessageSquare className="h-7 w-7" />
           </div>
-          <div>
-            <p className="text-sm font-bold text-text-primary">Still have questions?</p>
-            <p className="text-xs text-text-muted mt-0.5">
-              Reach out to your mentor or a BD Team member for direct support.
+          <div className="space-y-1">
+            <h3 className="text-base sm:text-lg font-bold text-text-primary">
+              ยังมีข้อสงสัยหรือไม่? (Still have questions?)
+            </h3>
+            <p className="text-xs sm:text-sm text-text-muted max-w-md">
+              หากไม่พบคำตอบในคำถามที่พบบ่อยด้านบน คุณสามารถเปิด Support Ticket เพื่อสอบถามข้อสงสัยเพิ่มเติมกับ Mentor หรือทีม BD ได้โดยตรง
             </p>
           </div>
         </div>
-        <a
-          href="/support"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-sm font-bold hover:bg-brand-hover transition-colors shadow-sm shrink-0"
+        <Link
+          href="/support?new=true"
+          className="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-brand hover:bg-brand-hover text-white text-sm font-bold shadow-md shadow-brand/25 hover:shadow-brand/35 hover:-translate-y-0.5 active:scale-95 transition-all shrink-0 w-full sm:w-auto"
         >
-          <Bell className="h-4 w-4" />
-          Contact Support
-        </a>
+          <Plus className="h-4 w-4" />
+          เปิด Ticket ขอความช่วยเหลือ
+        </Link>
       </div>
     </DashboardShell>
   );

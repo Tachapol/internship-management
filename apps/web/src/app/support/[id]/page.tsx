@@ -131,6 +131,7 @@ export default function TicketDetailPage() {
   const [staffUsers, setStaffUsers] = React.useState<User[]>([]);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const isStaff = STAFF_ROLES.includes(user?.role ?? "");
+  const canAssign = user?.role === "SUPER_ADMIN" || user?.role === "BD_TEAM";
 
   const loadTicket = React.useCallback(() => {
     if (!id) return;
@@ -150,13 +151,18 @@ export default function TicketDetailPage() {
   }, [loadTicket]);
 
   React.useEffect(() => {
-    if (isStaff) {
+    if (canAssign) {
       usersApi.list({ limit: 100 }).then((res) => {
-        const staff = res.data.filter(u => u.role === "SUPER_ADMIN" || u.role === "BD_TEAM" || u.role === "MENTOR");
-        setStaffUsers(staff);
+        // Only BD_TEAM and SUPER_ADMIN can be assigned to support tickets; exclude ticket author
+        const assignable = res.data.filter(
+          (u) =>
+            (u.role === "SUPER_ADMIN" || u.role === "BD_TEAM") &&
+            (!ticket || u.id !== ticket.author.id)
+        );
+        setStaffUsers(assignable);
       }).catch(console.error);
     }
-  }, [isStaff]);
+  }, [canAssign, ticket?.author?.id]);
 
   React.useEffect(() => {
     if (!loading) {
@@ -384,21 +390,23 @@ export default function TicketDetailPage() {
 
               <div className="border-t border-borderGray pt-1.5">
                 <p className="text-text-muted font-medium mb-0.5">Assigned to</p>
-                {isStaff ? (
+                {canAssign ? (
                   <div className="space-y-1.5 mt-1">
                     <select
                       value={ticket.assignedTo?.id || ""}
-                      onChange={(e) => handleAssign(e.target.value || undefined)}
+                      onChange={(e) => handleAssign(e.target.value)}
                       className="w-full h-8 px-2 bg-bgInput border border-borderGray rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/30"
                     >
                       <option value="">Unassigned</option>
-                      {staffUsers.map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name} ({u.role.replace("_", " ")})
-                        </option>
-                      ))}
+                      {staffUsers
+                        .filter((u) => u.id !== ticket.author.id)
+                        .map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name} ({u.role.replace("_", " ")})
+                          </option>
+                        ))}
                     </select>
-                    {!ticket.assignedTo && (
+                    {!ticket.assignedTo && user?.id !== ticket.author.id && (
                       <button
                         id="btn-assign-self"
                         onClick={() => handleAssign()}

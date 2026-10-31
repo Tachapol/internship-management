@@ -143,14 +143,14 @@ function SuperAdminDashboard({ data, onRefresh }: { data: SuperAdminStats; onRef
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Total Companies" value={data.totalCompanies} sub="Partner organization ecosystem"
-          icon={Building2} iconBg="bg-brand/10" iconColor="text-brand" href="/companies" />
+          icon={Building2} variant="orange" href="/companies" />
         <KpiCard label="Active Interns"
           value={<>{data.activeStudents}<span className="text-sm font-semibold text-text-muted"> / {data.totalStudents}</span></>}
-          sub="Internship status active" icon={Users} iconBg="bg-buddy/10" iconColor="text-buddy" href="/users?role=STUDENT" />
+          sub="Internship status active" icon={Users} variant="violet" href="/users?role=STUDENT" />
         <KpiCard label="System Mentors" value={data.totalMentors} sub="Ecosystem supervisors"
-          icon={GraduationCap} iconBg="bg-success/10" iconColor="text-success" href="/mentors" />
+          icon={GraduationCap} variant="emerald" href="/mentors" />
         <KpiCard label="Total Training Plans" value={data.totalTrainingPlans} sub="Aggregated syllabus weeks"
-          icon={BookOpen} iconBg="bg-blue-50" iconColor="text-blue-600" href="/training-plans" />
+          icon={BookOpen} variant="blue" href="/training-plans" />
       </div>
 
       {/* Main Grid */}
@@ -452,10 +452,10 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
         <>
           {/* Metrics Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard label="Active Partnerships" value={data.companyOverview.filter(c => c.status === "ACTIVE").length} icon={Building2} iconBg="bg-brand/10" iconColor="text-brand" href="/companies" />
-            <KpiCard label="Total Students" value={data.totalStudents} icon={Users} iconBg="bg-buddy/10" iconColor="text-buddy" href="/users?role=STUDENT" />
-            <KpiCard label="Total Mentors" value={data.totalMentors} icon={GraduationCap} iconBg="bg-success/10" iconColor="text-success" href="/users?role=MENTOR" />
-            <KpiCard label="Total Training Plans" value={data.totalTrainingPlans} icon={BookOpen} iconBg="bg-blue-50" iconColor="text-blue-600" href="/training-plans" />
+            <KpiCard label="Active Partnerships" value={data.companyOverview.filter(c => c.status === "ACTIVE").length} icon={Building2} variant="orange" href="/companies" />
+            <KpiCard label="Total Students" value={data.totalStudents} icon={Users} variant="violet" href="/users?role=STUDENT" />
+            <KpiCard label="Total Mentors" value={data.totalMentors} icon={GraduationCap} variant="emerald" href="/users?role=MENTOR" />
+            <KpiCard label="Total Training Plans" value={data.totalTrainingPlans} icon={BookOpen} variant="blue" href="/training-plans" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -660,10 +660,10 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
             <>
               {/* KPI Cards Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard label="On-Time Rate" value={`${onTimeRate}%`} sub="Present out of active check-ins" icon={CheckCircle2} iconBg="bg-emerald-50 border border-emerald-100" iconColor="text-emerald-600" href="/attendance" />
-                <KpiCard label="Late Arrivals" value={lateCount} sub="Check-ins after 08:00 AM" icon={AlertCircle} iconBg="bg-amber-50 border border-amber-100" iconColor="text-amber-600" href="/attendance" />
-                <KpiCard label="Absent Students" value={absentCount} sub="Expected but missed check-in" icon={XCircle} iconBg="bg-rose-50 border border-rose-100" iconColor="text-rose-600" href="/attendance" />
-                <KpiCard label="Approved Leaves" value={leaveCount} sub="Synced students on leave" icon={Clock} iconBg="bg-violet-50 border border-violet-100" iconColor="text-violet-600" href="/leave-requests" />
+                <KpiCard label="On-Time Rate" value={`${onTimeRate}%`} sub="Present out of active check-ins" icon={CheckCircle2} variant="emerald" href="/attendance" />
+                <KpiCard label="Late Arrivals" value={lateCount} sub="Check-ins after 08:00 AM" icon={AlertCircle} variant="amber" href="/attendance" />
+                <KpiCard label="Absent Students" value={absentCount} sub="Expected but missed check-in" icon={XCircle} variant="rose" href="/attendance" />
+                <KpiCard label="Approved Leaves" value={leaveCount} sub="Synced students on leave" icon={Clock} variant="violet" href="/leave-requests" />
               </div>
 
               {/* Charts Panel */}
@@ -966,14 +966,14 @@ function MentorDashboard({ data, onRefresh }: { data: MentorStats; onRefresh: ()
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard label="Assigned Interns" value={data.assignedStudents.length} icon={Users} iconBg="bg-buddy/10" iconColor="text-buddy" href="/users?role=STUDENT" />
+        <KpiCard label="Assigned Interns" value={data.assignedStudents.length} icon={Users} variant="violet" href="/users?role=STUDENT" />
         <KpiCard label="Today's Attendance"
           value={`${data.attendanceSummary.checkedIn} / ${data.attendanceSummary.totalExpected}`}
           sub="Expected student presence today"
-          icon={CalendarCheck} iconBg="bg-success/10" iconColor="text-success" href="/attendance" />
+          icon={CalendarCheck} variant="emerald" href="/attendance" />
         <KpiCard label="Training Completion" value={`${data.trainingPlanProgress.rate}%`}
           sub={`${data.trainingPlanProgress.completed} / ${data.trainingPlanProgress.total} weeks finished`}
-          icon={BookOpen} iconBg="bg-brand/10" iconColor="text-brand" href="/training-plans" />
+          icon={BookOpen} variant="orange" href="/training-plans" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -1139,10 +1139,10 @@ function StudentDashboard({ data, onRefresh }: { data: StudentStats; onRefresh: 
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Days Present" value={<span className="text-success">{data.attendanceSummary.PRESENT}</span>} icon={CheckCircle2} iconBg="bg-success/10" iconColor="text-success" href="/attendance" />
-        <KpiCard label="Days Late" value={<span className="text-amber-500">{data.attendanceSummary.LATE}</span>} icon={Clock} iconBg="bg-amber-50" iconColor="text-amber-500" href="/attendance" />
-        <KpiCard label="Leaves Taken" value={<span className="text-buddy">{data.attendanceSummary.ON_LEAVE}</span>} icon={CalendarCheck} iconBg="bg-buddy/10" iconColor="text-buddy" href="/leave-requests" />
-        <KpiCard label="Syllabus Progress" value={`${data.trainingPlanProgress.completed} / ${data.trainingPlanProgress.total}`} sub={`${data.trainingPlanProgress.rate}% Completed`} icon={BookOpen} iconBg="bg-brand/10" iconColor="text-brand" href="/training-plans" />
+        <KpiCard label="Days Present" value={<span className="text-emerald-600">{data.attendanceSummary.PRESENT}</span>} icon={CheckCircle2} variant="emerald" href="/attendance" />
+        <KpiCard label="Days Late" value={<span className="text-amber-600">{data.attendanceSummary.LATE}</span>} icon={Clock} variant="amber" href="/attendance" />
+        <KpiCard label="Leaves Taken" value={<span className="text-purple-600">{data.attendanceSummary.ON_LEAVE}</span>} icon={CalendarCheck} variant="violet" href="/leave-requests" />
+        <KpiCard label="Syllabus Progress" value={`${data.trainingPlanProgress.completed} / ${data.trainingPlanProgress.total}`} sub={`${data.trainingPlanProgress.rate}% Completed`} icon={BookOpen} variant="blue" href="/training-plans" />
       </div>
 
       {/* Main Grid */}

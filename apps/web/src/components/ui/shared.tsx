@@ -130,13 +130,66 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const KPI_VARIANTS: Record<string, {
+  card: string;
+  iconBg: string;
+  iconColor: string;
+  borderAccent: string;
+  hoverArrow: string;
+}> = {
+  orange: {
+    card: "border-orange-200/90 bg-gradient-to-br from-white via-orange-50/20 to-orange-50/50 hover:border-orange-400 hover:shadow-[0_8px_24px_rgba(255,140,55,0.16)]",
+    iconBg: "bg-orange-100/90 border border-orange-200/70 shadow-sm",
+    iconColor: "text-orange-600",
+    borderAccent: "bg-gradient-to-r from-orange-400 to-amber-500",
+    hoverArrow: "text-orange-600",
+  },
+  blue: {
+    card: "border-blue-200/90 bg-gradient-to-br from-white via-blue-50/20 to-blue-50/50 hover:border-blue-400 hover:shadow-[0_8px_24px_rgba(59,130,246,0.16)]",
+    iconBg: "bg-blue-100/90 border border-blue-200/70 shadow-sm",
+    iconColor: "text-blue-600",
+    borderAccent: "bg-gradient-to-r from-blue-400 to-cyan-500",
+    hoverArrow: "text-blue-600",
+  },
+  emerald: {
+    card: "border-emerald-200/90 bg-gradient-to-br from-white via-emerald-50/20 to-emerald-50/50 hover:border-emerald-400 hover:shadow-[0_8px_24px_rgba(16,185,129,0.16)]",
+    iconBg: "bg-emerald-100/90 border border-emerald-200/70 shadow-sm",
+    iconColor: "text-emerald-600",
+    borderAccent: "bg-gradient-to-r from-emerald-400 to-teal-500",
+    hoverArrow: "text-emerald-600",
+  },
+  violet: {
+    card: "border-purple-200/90 bg-gradient-to-br from-white via-purple-50/20 to-purple-50/50 hover:border-purple-400 hover:shadow-[0_8px_24px_rgba(168,85,247,0.16)]",
+    iconBg: "bg-purple-100/90 border border-purple-200/70 shadow-sm",
+    iconColor: "text-purple-600",
+    borderAccent: "bg-gradient-to-r from-purple-400 to-violet-500",
+    hoverArrow: "text-purple-600",
+  },
+  amber: {
+    card: "border-amber-200/90 bg-gradient-to-br from-white via-amber-50/20 to-amber-50/50 hover:border-amber-400 hover:shadow-[0_8px_24px_rgba(245,158,11,0.16)]",
+    iconBg: "bg-amber-100/90 border border-amber-200/70 shadow-sm",
+    iconColor: "text-amber-600",
+    borderAccent: "bg-gradient-to-r from-amber-400 to-yellow-500",
+    hoverArrow: "text-amber-600",
+  },
+  rose: {
+    card: "border-rose-200/90 bg-gradient-to-br from-white via-rose-50/20 to-rose-50/50 hover:border-rose-400 hover:shadow-[0_8px_24px_rgba(244,63,94,0.16)]",
+    iconBg: "bg-rose-100/90 border border-rose-200/70 shadow-sm",
+    iconColor: "text-rose-600",
+    borderAccent: "bg-gradient-to-r from-rose-400 to-red-500",
+    hoverArrow: "text-rose-600",
+  },
+};
+
 export function KpiCard({
   label,
   value,
   sub,
   icon: Icon,
-  iconBg = "bg-brand/10",
-  iconColor = "text-brand",
+  iconBg,
+  iconColor,
+  variant,
+  className,
   href,
   onClick,
 }: {
@@ -146,31 +199,51 @@ export function KpiCard({
   icon?: React.ElementType;
   iconBg?: string;
   iconColor?: string;
+  variant?: "orange" | "blue" | "emerald" | "violet" | "amber" | "rose" | "brand";
+  className?: string;
   href?: string;
   onClick?: () => void;
 }) {
   const isInteractive = Boolean(href || onClick);
 
+  let chosenVariant = variant === "brand" ? "orange" : variant;
+  if (!chosenVariant) {
+    const colorStr = `${iconColor ?? ""} ${iconBg ?? ""}`;
+    if (colorStr.includes("blue")) chosenVariant = "blue";
+    else if (colorStr.includes("success") || colorStr.includes("emerald")) chosenVariant = "emerald";
+    else if (colorStr.includes("buddy") || colorStr.includes("violet") || colorStr.includes("purple")) chosenVariant = "violet";
+    else if (colorStr.includes("amber") || colorStr.includes("yellow")) chosenVariant = "amber";
+    else if (colorStr.includes("rose") || colorStr.includes("danger") || colorStr.includes("red")) chosenVariant = "rose";
+    else chosenVariant = "orange";
+  }
+
+  const theme = KPI_VARIANTS[chosenVariant] ?? KPI_VARIANTS.orange;
+
   const cardContent = (
     <div
       className={cn(
-        "bg-white border border-borderGray rounded-xl p-5 flex items-center justify-between select-none transition-all duration-150",
+        "relative overflow-hidden rounded-xl p-5 flex items-center justify-between select-none transition-all duration-200 border",
+        theme.card,
         isInteractive &&
-          "cursor-pointer hover:border-brand/60 hover:shadow-[0_6px_20px_rgba(255,140,55,0.12)] hover:-translate-y-0.5 active:scale-[0.985] active:translate-y-0 active:shadow-none group"
+          "cursor-pointer hover:-translate-y-1 active:scale-[0.985] active:translate-y-0 group",
+        className
       )}
     >
+      {/* Category accent bar */}
+      <div className={cn("absolute top-0 left-0 right-0 h-1", theme.borderAccent)} />
+
       <div className="space-y-1.5 flex-1 min-w-0 pr-2">
         <div className="flex items-center gap-1.5">
           <p
             className={cn(
               "text-[11px] font-bold tracking-wider uppercase text-text-muted transition-colors",
-              isInteractive && "group-hover:text-brand"
+              isInteractive && "group-hover:text-text-primary"
             )}
           >
             {label}
           </p>
           {isInteractive && (
-            <ArrowUpRight className="h-3.5 w-3.5 text-brand opacity-0 group-hover:opacity-100 transition-all -translate-x-1 group-hover:translate-x-0" />
+            <ArrowUpRight className={cn("h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-all -translate-x-1 group-hover:translate-x-0", theme.hoverArrow)} />
           )}
         </div>
         <p
@@ -186,12 +259,12 @@ export function KpiCard({
       {Icon && (
         <div
           className={cn(
-            "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-150",
-            isInteractive && "group-hover:scale-105",
-            iconBg
+            "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-200",
+            isInteractive && "group-hover:scale-110 group-hover:rotate-3",
+            iconBg || theme.iconBg
           )}
         >
-          <Icon className={cn("h-5 w-5", iconColor)} />
+          <Icon className={cn("h-5 w-5", iconColor || theme.iconColor)} />
         </div>
       )}
     </div>

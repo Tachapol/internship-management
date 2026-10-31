@@ -71,6 +71,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         companyId: user.companyId,
+        company: (user as any).company,
       },
     };
   }

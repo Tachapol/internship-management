@@ -1,14 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
-import { Team } from 'database';
+import { Team, UserRole } from 'database';
 
 @Injectable()
 export class TeamsService {
   constructor(private prisma: PrismaService) {}
 
-  async createTeam(dto: CreateTeamDto): Promise<Team> {
+  async createTeam(
+    dto: CreateTeamDto,
+    currentUser?: { id: string; role: UserRole; companyId?: string },
+  ): Promise<Team> {
+    if (currentUser?.role === UserRole.BD_TEAM && currentUser.companyId && currentUser.companyId !== dto.companyId) {
+      throw new ForbiddenException('Cannot create teams for another company');
+    }
+
     const company = await this.prisma.company.findUnique({
       where: { id: dto.companyId },
     });
@@ -24,12 +31,20 @@ export class TeamsService {
     });
   }
 
-  async updateTeam(id: string, dto: UpdateTeamDto): Promise<Team> {
+  async updateTeam(
+    id: string,
+    dto: UpdateTeamDto,
+    currentUser?: { id: string; role: UserRole; companyId?: string },
+  ): Promise<Team> {
     const team = await this.prisma.team.findUnique({
       where: { id },
     });
     if (!team) {
       throw new NotFoundException('Team not found');
+    }
+
+    if (currentUser?.role === UserRole.BD_TEAM && currentUser.companyId && team.companyId !== currentUser.companyId) {
+      throw new ForbiddenException('Cannot modify teams belonging to another company');
     }
 
     return this.prisma.team.update({
@@ -40,12 +55,19 @@ export class TeamsService {
     });
   }
 
-  async deleteTeam(id: string): Promise<{ success: boolean }> {
+  async deleteTeam(
+    id: string,
+    currentUser?: { id: string; role: UserRole; companyId?: string },
+  ): Promise<{ success: boolean }> {
     const team = await this.prisma.team.findUnique({
       where: { id },
     });
     if (!team) {
       throw new NotFoundException('Team not found');
+    }
+
+    if (currentUser?.role === UserRole.BD_TEAM && currentUser.companyId && team.companyId !== currentUser.companyId) {
+      throw new ForbiddenException('Cannot delete teams belonging to another company');
     }
 
     // Soft delete team by setting deletedAt
@@ -65,7 +87,10 @@ export class TeamsService {
     return { success: true };
   }
 
-  async getTeamDetails(id: string): Promise<Team> {
+  async getTeamDetails(
+    id: string,
+    currentUser?: { id: string; role: UserRole; companyId?: string },
+  ): Promise<Team> {
     const team = await this.prisma.team.findFirst({
       where: { id, deletedAt: null },
       include: {
@@ -74,7 +99,7 @@ export class TeamsService {
         },
         users: {
           where: { deletedAt: null },
-          select: { id: true, name: true, email: true, role: true, status: true },
+          select: { id: true, name: true, email: true, role: true, status: true, mentorId: true },
         },
         trainingPlans: {
           where: { deletedAt: null },
@@ -85,17 +110,66 @@ export class TeamsService {
     if (!team) {
       throw new NotFoundException('Team not found');
     }
+
+    if (currentUser) {
+      if (currentUser.role === UserRole.MENTOR) {
+        const isMemberOrMentor = team.users.some(
+          (u) => u.id === currentUser.id || u.mentorId === currentUser.id,
+        );
+        if (!isMemberOrMentor) {
+          throw new ForbiddenException('You do not have permission to view this team');
+        }
+      } else if (currentUser.role === UserRole.STUDENT) {
+        const isMember = team.users.some((u) => u.id === currentUser.id);
+        if (!isMember) {
+          throw new ForbiddenException('You do not have permission to view this team');
+        }
+      } else if (currentUser.role === UserRole.BD_TEAM && currentUser.companyId) {
+        if (team.companyId !== currentUser.companyId) {
+          throw new ForbiddenException('You do not have permission to view teams from another company');
+        }
+      }
+    }
+
     return team;
   }
 
-  async getTeamsList(filters: {
-    companyId?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<any> {
+  async getTeamsList(
+    filters: {
+      companyId?: string;
+      page?: number;
+      limit?: number;
+    },
+    currentUser?: { id: string; role: UserRole; companyId?: string },
+  ): Promise<any> {
     const where: any = {
       deletedAt: null,
     };
+
+    if (currentUser) {
+      if (currentUser.role === UserRole.MENTOR) {
+        // Mentors only see teams they are in or whose students they mentor
+        where.users = {
+          some: {
+            OR: [
+              { id: currentUser.id },
+              { mentorId: currentUser.id },
+            ],
+            deletedAt: null,
+          },
+        };
+      } else if (currentUser.role === UserRole.STUDENT) {
+        // Students only see their own assigned team
+        where.users = {
+          some: {
+            id: currentUser.id,
+            deletedAt: null,
+          },
+        };
+      } else if (currentUser.role === UserRole.BD_TEAM && currentUser.companyId) {
+        where.companyId = currentUser.companyId;
+      }
+    }
 
     if (filters.companyId) {
       where.companyId = filters.companyId;

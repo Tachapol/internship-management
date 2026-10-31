@@ -32,7 +32,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Leave Requests", href: "/leave-requests", icon: FileSpreadsheet, roles: ["SUPER_ADMIN", "BD_TEAM", "MENTOR", "STUDENT"] },
   { label: "Events", href: "/events", icon: Calendar, roles: ["SUPER_ADMIN", "BD_TEAM", "MENTOR", "STUDENT"] },
   { label: "Training Plans", href: "/training-plans", icon: BookOpen, roles: ["SUPER_ADMIN", "BD_TEAM", "MENTOR", "STUDENT"] },
-  { label: "Support", href: "/support", icon: LifeBuoy, roles: ["SUPER_ADMIN", "BD_TEAM", "MENTOR", "STUDENT"] },
   { label: "Support Tickets", href: "/support-tickets", icon: ShieldCheck, roles: ["SUPER_ADMIN", "BD_TEAM", "MENTOR"] },
   { label: "Audit Logs", href: "/audit-logs", icon: ShieldCheck, roles: ["SUPER_ADMIN"] },
   { label: "Settings", href: "/settings", icon: Settings, roles: ["SUPER_ADMIN", "BD_TEAM", "MENTOR", "STUDENT"] },
@@ -115,8 +114,14 @@ function Sidebar({
               {user?.name?.charAt(0).toUpperCase() ?? "?"}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-text-primary truncate group-hover:text-brand transition-colors">{user?.name}</p>
-              <p className="text-xs text-text-muted truncate">{user?.role?.replace("_", " ")}</p>
+              <p className="text-sm font-semibold text-text-primary truncate group-hover:text-brand transition-colors leading-tight">{user?.name}</p>
+              {user?.company?.name && (
+                <p className="text-[11px] font-medium text-brand truncate flex items-center gap-1 mt-0.5 leading-tight">
+                  <Building2 className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{user.company.name}</span>
+                </p>
+              )}
+              <p className="text-[10px] text-text-muted truncate uppercase tracking-wider font-semibold mt-0.5">{user?.role?.replace("_", " ")}</p>
             </div>
           </button>
           <button
@@ -388,10 +393,20 @@ function Header({
           title="Click to edit profile"
           className="flex items-center gap-2 p-1.5 hover:bg-bgInput rounded-lg transition-colors cursor-pointer group"
         >
-          <div className="w-7 h-7 rounded-full bg-brand/15 flex items-center justify-center text-brand text-xs font-bold group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-full bg-brand/15 flex items-center justify-center text-brand text-xs font-bold group-hover:scale-105 transition-transform shrink-0">
             {user?.name?.charAt(0).toUpperCase() ?? "?"}
           </div>
-          <span className="text-xs font-semibold text-text-primary hidden sm:block group-hover:text-brand transition-colors">{user?.name}</span>
+          <div className="text-left hidden sm:block">
+            <span className="text-xs font-semibold text-text-primary block group-hover:text-brand transition-colors leading-tight">
+              {user?.name}
+            </span>
+            {user?.company?.name && (
+              <span className="text-[10px] font-medium text-brand block truncate max-w-[140px] leading-tight flex items-center gap-0.5 mt-0.5">
+                <Building2 className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">{user.company.name}</span>
+              </span>
+            )}
+          </div>
         </button>
       </div>
     </header>

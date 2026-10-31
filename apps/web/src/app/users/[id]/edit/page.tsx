@@ -155,7 +155,6 @@ export default function EditUserPage() {
                     <option value="STUDENT">Student / Intern</option>
                     <option value="MENTOR">Mentor Supervisor</option>
                     <option value="BD_TEAM">BD Team Member</option>
-                    <option value="SUPER_ADMIN">System Administrator</option>
                   </select>
                 </div>
 

@@ -256,7 +256,6 @@ function UsersPageContent() {
           { value: "STUDENT", label: "Students" },
           { value: "MENTOR", label: "Mentors" },
           { value: "BD_TEAM", label: "BD Team" },
-          { value: "SUPER_ADMIN", label: "Super Admins" }
         ] as const).map((tab) => (
           <button
             key={tab.value}
