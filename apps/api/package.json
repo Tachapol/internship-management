@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "prebuild": "npx prisma generate --schema=../../packages/database/prisma/schema.prisma",
-    "build": "nest build",
+    "build": "mkdir -p public && nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "dev": "nest start --watch",

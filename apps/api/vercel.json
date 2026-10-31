@@ -1,6 +1,7 @@
 {
   "version": 2,
   "regions": ["sin1"],
+  "outputDirectory": "public",
   "functions": {
     "api/index.ts": {
       "memory": 1024,
