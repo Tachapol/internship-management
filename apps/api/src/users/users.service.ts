@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { User, UserRole, UserStatus } from 'database';
 
@@ -140,6 +140,16 @@ export class UsersService {
   }
 
   async softDelete(id: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.email) {
+      await this.prisma.invitation.updateMany({
+        where: { email: user.email, status: 'PENDING' },
+        data: { status: 'REVOKED' },
+      }).catch(() => {});
+    }
     return this.prisma.user.update({
       where: { id },
       data: { deletedAt: new Date(), status: UserStatus.INACTIVE },

@@ -10,6 +10,7 @@ import {
   ForbiddenException,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { AttendanceService } from './attendance.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
@@ -19,6 +20,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UserRole, AttendanceStatus } from 'database';
 
+@ApiTags('Attendance')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('attendance')
 export class AttendanceController {
@@ -26,6 +29,12 @@ export class AttendanceController {
 
   @Post('check-in')
   @Roles(UserRole.STUDENT)
+  @ApiOperation({
+    summary: 'Student daily check-in',
+    description: 'Records student check-in with optional GPS coordinates, IP address, and notes.',
+  })
+  @ApiResponse({ status: 201, description: 'Check-in recorded successfully.' })
+  @ApiResponse({ status: 400, description: 'Already checked in for today.' })
   async checkIn(
     @GetUser('id') studentId: string,
     @Body() dto: CheckInDto,
@@ -35,6 +44,12 @@ export class AttendanceController {
 
   @Post('check-out')
   @Roles(UserRole.STUDENT)
+  @ApiOperation({
+    summary: 'Student daily check-out',
+    description: 'Records student check-out timestamp, calculates working hours, and saves work summary note.',
+  })
+  @ApiResponse({ status: 200, description: 'Check-out recorded successfully.' })
+  @ApiResponse({ status: 400, description: 'No active check-in found for today.' })
   async checkOut(
     @GetUser('id') studentId: string,
     @Body() dto: CheckOutDto,
@@ -44,6 +59,19 @@ export class AttendanceController {
 
   @Get()
   @Roles(UserRole.STUDENT, UserRole.MENTOR, UserRole.BD_TEAM, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get attendance history list',
+    description: 'Retrieves a paginated list of attendance records with optional date and user filtering.',
+  })
+  @ApiQuery({ name: 'studentId', required: false, type: String, description: 'Filter by student user ID' })
+  @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by company ID' })
+  @ApiQuery({ name: 'mentorId', required: false, type: String, description: 'Filter by assigned mentor ID' })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Start date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: 'End date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'status', required: false, enum: AttendanceStatus, description: 'Filter by attendance status' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiResponse({ status: 200, description: 'Attendance list retrieved.' })
   async findAll(
     @GetUser() user: { id: string; role: string; companyId?: string },
     @Query('studentId') studentId?: string,
@@ -70,6 +98,12 @@ export class AttendanceController {
 
   @Get('today')
   @Roles(UserRole.STUDENT, UserRole.MENTOR, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get today attendance status',
+    description: 'Checks whether the student has checked in or checked out today.',
+  })
+  @ApiQuery({ name: 'studentId', required: false, type: String, description: 'Target student ID (required for Mentors/Admins)' })
+  @ApiResponse({ status: 200, description: 'Today attendance record or null.' })
   async today(
     @GetUser() currentUser: { id: string; role: UserRole },
     @Query('studentId') studentId?: string,
@@ -88,6 +122,14 @@ export class AttendanceController {
 
   @Get('report')
   @Roles(UserRole.STUDENT, UserRole.MENTOR, UserRole.BD_TEAM, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get monthly attendance report',
+    description: 'Returns aggregated attendance statistics (present, absent, late, total hours) for a specific month and year.',
+  })
+  @ApiQuery({ name: 'studentId', required: false, type: String, description: 'Filter by specific student' })
+  @ApiQuery({ name: 'year', required: false, type: Number, description: 'Report year (e.g., 2026)' })
+  @ApiQuery({ name: 'month', required: false, type: Number, description: 'Report month (1-12)' })
+  @ApiResponse({ status: 200, description: 'Monthly report metrics and breakdown.' })
   async report(
     @GetUser() currentUser: { id: string; role: UserRole; companyId?: string },
     @Query('studentId') studentId?: string,
@@ -103,6 +145,11 @@ export class AttendanceController {
 
   @Patch(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
+  @ApiOperation({
+    summary: 'Admin override attendance',
+    description: 'Manually adjusts or corrects an attendance status and note (Super Admin / BD Team only).',
+  })
+  @ApiResponse({ status: 200, description: 'Attendance updated successfully.' })
   async override(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { status: AttendanceStatus; note?: string },

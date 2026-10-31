@@ -14,7 +14,10 @@ export class DashboardController {
   constructor(private dashboardService: DashboardService) {}
 
   @Get('stats')
-  @ApiOperation({ summary: 'Get role-scoped dashboard statistics' })
+  @ApiOperation({
+    summary: 'Get role-scoped dashboard statistics',
+    description: 'Returns aggregated KPI metrics, charts, upcoming events, and summary data tailored to the authenticated user role (Super Admin, BD, Mentor, Student).',
+  })
   @ApiResponse({ status: 200, description: 'Return metrics, lists, and summary aggregates.' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })

@@ -1,4 +1,5 @@
 import { Controller, Post, Body, UseGuards, Get, Query, BadRequestException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { InvitationsService } from './invitations.service';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
@@ -8,6 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UserRole } from 'database';
 
+@ApiTags('Invitations')
 @Controller('invitations')
 export class InvitationsController {
   constructor(private invitationsService: InvitationsService) {}
@@ -15,6 +17,12 @@ export class InvitationsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Create and send user invitation',
+    description: 'Generates an invitation token and sends an onboarding link via email (Super Admin / BD Team only).',
+  })
+  @ApiResponse({ status: 201, description: 'Invitation created and dispatched.' })
   async create(
     @Body() createInvitationDto: CreateInvitationDto,
     @GetUser('id') userId: string,
@@ -23,6 +31,13 @@ export class InvitationsController {
   }
 
   @Get('verify')
+  @ApiOperation({
+    summary: 'Verify invitation token',
+    description: 'Validates an invitation token from the email link and returns user/company context before password setup.',
+  })
+  @ApiQuery({ name: 'token', required: true, type: String, description: 'Invitation token string' })
+  @ApiResponse({ status: 200, description: 'Token is valid.' })
+  @ApiResponse({ status: 400, description: 'Token is invalid or expired.' })
   async verify(@Query('token') token: string) {
     if (!token) {
       throw new BadRequestException('Token is required');
@@ -33,6 +48,14 @@ export class InvitationsController {
   @Get('link')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get pending invitation link by email',
+    description: 'Retrieves the invitation link for a pending user if they did not receive the email (Super Admin / BD Team only).',
+  })
+  @ApiQuery({ name: 'email', required: true, type: String, description: 'Target user email' })
+  @ApiResponse({ status: 200, description: 'Invitation link retrieved.' })
+  @ApiResponse({ status: 400, description: 'Email is required or not found.' })
   async getLink(@Query('email') email: string) {
     if (!email) {
       throw new BadRequestException('Email is required');
@@ -41,6 +64,12 @@ export class InvitationsController {
   }
 
   @Post('accept')
+  @ApiOperation({
+    summary: 'Accept invitation and set password',
+    description: 'Completes onboarding by validating the token and setting the user permanent password.',
+  })
+  @ApiResponse({ status: 201, description: 'Invitation accepted and account activated.' })
+  @ApiResponse({ status: 400, description: 'Invalid token or password requirements not met.' })
   async accept(@Body() acceptInvitationDto: AcceptInvitationDto) {
     return this.invitationsService.acceptInvitation(acceptInvitationDto);
   }

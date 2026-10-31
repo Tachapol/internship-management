@@ -25,7 +25,10 @@ export class CompaniesController {
 
   @Post()
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
-  @ApiOperation({ summary: 'Create a new company' })
+  @ApiOperation({
+    summary: 'Create a new company',
+    description: 'Registers a new partner company with profile and contact information (Super Admin / BD Team only).',
+  })
   @ApiResponse({ status: 201, description: 'The company has been successfully created.' })
   async create(@Body() createCompanyDto: CreateCompanyDto) {
     return this.companiesService.createCompany(createCompanyDto);
@@ -33,21 +36,30 @@ export class CompaniesController {
 
   @Get()
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
-  @ApiOperation({ summary: 'Get a list of all companies' })
+  @ApiOperation({
+    summary: 'Get a list of all companies',
+    description: 'Returns a paginated list of companies with optional search and status filtering (Super Admin / BD Team only).',
+  })
   async findAll(@Query() filter: GetCompaniesFilterDto) {
     return this.companiesService.getCompaniesList(filter);
   }
 
   @Get(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
-  @ApiOperation({ summary: 'Get company details by ID' })
+  @ApiOperation({
+    summary: 'Get company details by ID',
+    description: 'Retrieves complete company profile, teams, and member statistics by company UUID.',
+  })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.companiesService.getCompanyDetails(id);
   }
 
   @Patch(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
-  @ApiOperation({ summary: 'Update company details' })
+  @ApiOperation({
+    summary: 'Update company details',
+    description: 'Updates company name, domain, address, or contact details (Super Admin / BD Team only).',
+  })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCompanyDto: UpdateCompanyDto,
@@ -57,7 +69,10 @@ export class CompaniesController {
 
   @Patch(':id/status')
   @Roles(UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Update company status (enable/disable)' })
+  @ApiOperation({
+    summary: 'Update company status',
+    description: 'Activates or suspends a partner company (Super Admin only).',
+  })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateCompanyStatusDto,

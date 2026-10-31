@@ -301,9 +301,27 @@ function UsersPageContent() {
   React.useEffect(() => { load(); }, [load]);
 
   async function handleDelete(id: string) {
-    if (!confirm("Deactivate this user?")) return;
-    await usersApi.delete(id);
-    load();
+    if (!confirm("Are you sure you want to deactivate this user?")) return;
+    try {
+      await usersApi.delete(id);
+      // Invalidate all users cache in sessionStorage
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i);
+          if (k && k.startsWith("users_cache_")) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+      } catch {}
+      // Optimistically remove from state
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      // Reload fresh list from server
+      load();
+    } catch (err: any) {
+      alert(err?.message || "Failed to deactivate user.");
+    }
   }
 
   return (

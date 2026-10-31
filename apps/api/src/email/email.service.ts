@@ -33,12 +33,16 @@ export class EmailService {
 
     if (this.resend) {
       try {
-        await this.resend.emails.send({
+        const { data, error } = await this.resend.emails.send({
           from: this.fromEmail,
           to: email,
           subject,
           html,
         });
+        if (error || !data?.id) {
+          this.logger.error(`Resend rejected invitation email to ${email}`, error || 'No email ID returned');
+          return false;
+        }
         this.logger.log(`Invitation email successfully sent to ${email}`);
         return true;
       } catch (error) {
@@ -47,7 +51,7 @@ export class EmailService {
       }
     } else {
       this.logger.log(`[MOCK EMAIL SENT to ${email}] Subject: "${subject}". Link: ${invitationLink}`);
-      return true;
+      return false;
     }
   }
 
@@ -65,12 +69,16 @@ export class EmailService {
 
     if (this.resend) {
       try {
-        await this.resend.emails.send({
+        const { data, error } = await this.resend.emails.send({
           from: this.fromEmail,
           to: email,
           subject,
           html,
         });
+        if (error || !data?.id) {
+          this.logger.error(`Resend rejected password reset email to ${email}`, error || 'No email ID returned');
+          return false;
+        }
         this.logger.log(`Password reset email successfully sent to ${email}`);
         return true;
       } catch (error) {
@@ -79,7 +87,7 @@ export class EmailService {
       }
     } else {
       this.logger.log(`[MOCK EMAIL SENT to ${email}] Subject: "${subject}". Link: ${resetLink}`);
-      return true;
+      return false;
     }
   }
 }

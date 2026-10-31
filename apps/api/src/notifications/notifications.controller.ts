@@ -10,6 +10,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -17,12 +18,22 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UserRole, NotificationType } from 'database';
 
+@ApiTags('Notifications')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'List user notifications',
+    description: 'Retrieves paginated notifications for the current authenticated user, with optional unread filter.',
+  })
+  @ApiQuery({ name: 'read', required: false, type: Boolean, description: 'Filter by read status (true/false)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' })
+  @ApiResponse({ status: 200, description: 'User notifications retrieved.' })
   async findAll(
     @GetUser('id') userId: string,
     @Query('read') readStr?: string,
@@ -39,11 +50,21 @@ export class NotificationsController {
   }
 
   @Patch('read-all')
+  @ApiOperation({
+    summary: 'Mark all notifications as read',
+    description: 'Updates all unread notifications for the current user to read.',
+  })
+  @ApiResponse({ status: 200, description: 'All notifications marked as read.' })
   async readAll(@GetUser('id') userId: string) {
     return this.notificationsService.markAllAsRead(userId);
   }
 
   @Patch(':id/read')
+  @ApiOperation({
+    summary: 'Mark single notification as read',
+    description: 'Marks a specific notification by ID as read.',
+  })
+  @ApiResponse({ status: 200, description: 'Notification marked as read.' })
   async read(
     @Param('id', ParseUUIDPipe) id: string,
     @GetUser('id') userId: string,
@@ -52,6 +73,11 @@ export class NotificationsController {
   }
 
   @Delete(':id')
+  @ApiOperation({
+    summary: 'Delete notification',
+    description: 'Deletes a notification from user inbox.',
+  })
+  @ApiResponse({ status: 200, description: 'Notification deleted.' })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @GetUser('id') userId: string,
@@ -61,6 +87,11 @@ export class NotificationsController {
 
   @Post('broadcast')
   @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Broadcast system notification',
+    description: 'Sends a system-wide announcement notification to all active users (Super Admin only).',
+  })
+  @ApiResponse({ status: 201, description: 'Notification broadcast successfully.' })
   async broadcast(
     @Body() body: { title: string; message: string; type?: NotificationType },
   ) {

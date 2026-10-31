@@ -10,10 +10,20 @@ import {
   UseGuards,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
   UseInterceptors,
   UploadedFile,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiResponse,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { InvitationsService } from '../invitations/invitations.service';
@@ -24,6 +34,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UserRole, UserStatus } from 'database';
 
+@ApiTags('Users')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
@@ -35,6 +47,21 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM, UserRole.MENTOR)
+  @ApiOperation({
+    summary: 'List users',
+    description: 'Retrieve a paginated list of users with optional filtering by role, status, company, etc. (Super Admin, BD Team, and Mentor).',
+  })
+  @ApiQuery({ name: 'role', required: false, enum: UserRole, description: 'Filter by user role' })
+  @ApiQuery({ name: 'companyId', required: false, type: String, description: 'Filter by company ID' })
+  @ApiQuery({ name: 'teamId', required: false, type: String, description: 'Filter by team ID' })
+  @ApiQuery({ name: 'mentorId', required: false, type: String, description: 'Filter by mentor ID' })
+  @ApiQuery({ name: 'status', required: false, enum: UserStatus, description: 'Filter by user status' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search term matching name or email' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiResponse({ status: 200, description: 'List of users returned successfully.' })
+  @ApiResponse({ status: 401, description: 'Authentication token missing or invalid.' })
+  @ApiResponse({ status: 403, description: 'Forbidden access for your role.' })
   async findAll(
     @GetUser() currentUser: { id: string; role: UserRole },
     @Query('role') role?: UserRole,
@@ -67,6 +94,12 @@ export class UsersController {
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get user by ID',
+    description: 'Retrieve full details of a specific user by their unique UUID.',
+  })
+  @ApiResponse({ status: 200, description: 'User found and returned.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @GetUser() currentUser: { id: string; role: UserRole },
@@ -89,6 +122,11 @@ export class UsersController {
 
   @Post('invite')
   @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
+  @ApiOperation({
+    summary: 'Invite a new user',
+    description: 'Sends an onboarding invitation email with role assignment (Super Admin / BD Team only).',
+  })
+  @ApiResponse({ status: 201, description: 'Invitation created and email sent successfully.' })
   async invite(
     @Body() body: { email: string; role: UserRole; companyId: string; mentorId?: string },
     @GetUser('id') invitedById: string,
@@ -106,6 +144,13 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @ApiOperation({
+    summary: 'Update user',
+    description: 'Update user profile details or administrative assignments (role, company, mentor).',
+  })
+  @ApiResponse({ status: 200, description: 'User updated successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden: Insufficient permissions to modify this user.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: any,
@@ -141,13 +186,42 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.SUPER_ADMIN)
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
+  @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
+  @ApiOperation({
+    summary: 'Soft delete user',
+    description: 'Deactivates the user account and marks as deleted (Super Admin and BD Team).',
+  })
+  @ApiResponse({ status: 200, description: 'User deleted successfully.' })
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() currentUser: { id: string; role: UserRole },
+  ) {
+    if (id === currentUser.id) {
+      throw new BadRequestException('You cannot deactivate your own account');
+    }
     return this.usersService.softDelete(id);
   }
 
   @Patch(':id/avatar')
   @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary: 'Upload user avatar',
+    description: 'Uploads an image file to Supabase storage and updates user avatar URL.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Avatar image file (JPEG, PNG)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Avatar uploaded and updated successfully.' })
   async uploadAvatar(
     @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: Express.Multer.File,
