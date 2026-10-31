@@ -51,7 +51,14 @@ function setupSwagger(nestApp: INestApplication) {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(nestApp, config);
-  SwaggerModule.setup('api/docs', nestApp, document);
+  SwaggerModule.setup('api/docs', nestApp, document, {
+    customCssUrl:
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.min.css',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-bundle.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-standalone-preset.js',
+    ],
+  });
   isSwaggerSetup = true;
 }
 
