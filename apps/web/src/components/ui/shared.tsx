@@ -136,6 +136,7 @@ const KPI_VARIANTS: Record<string, {
   iconColor: string;
   borderAccent: string;
   hoverArrow: string;
+  hoverText: string;
 }> = {
   orange: {
     card: "border-orange-200/90 bg-gradient-to-br from-white via-orange-50/20 to-orange-50/50 hover:border-orange-400 hover:shadow-[0_8px_24px_rgba(255,140,55,0.16)]",
@@ -143,6 +144,7 @@ const KPI_VARIANTS: Record<string, {
     iconColor: "text-orange-600",
     borderAccent: "bg-gradient-to-r from-orange-400 to-amber-500",
     hoverArrow: "text-orange-600",
+    hoverText: "group-hover:text-orange-600",
   },
   blue: {
     card: "border-blue-200/90 bg-gradient-to-br from-white via-blue-50/20 to-blue-50/50 hover:border-blue-400 hover:shadow-[0_8px_24px_rgba(59,130,246,0.16)]",
@@ -150,6 +152,7 @@ const KPI_VARIANTS: Record<string, {
     iconColor: "text-blue-600",
     borderAccent: "bg-gradient-to-r from-blue-400 to-cyan-500",
     hoverArrow: "text-blue-600",
+    hoverText: "group-hover:text-blue-600",
   },
   emerald: {
     card: "border-emerald-200/90 bg-gradient-to-br from-white via-emerald-50/20 to-emerald-50/50 hover:border-emerald-400 hover:shadow-[0_8px_24px_rgba(16,185,129,0.16)]",
@@ -157,6 +160,7 @@ const KPI_VARIANTS: Record<string, {
     iconColor: "text-emerald-600",
     borderAccent: "bg-gradient-to-r from-emerald-400 to-teal-500",
     hoverArrow: "text-emerald-600",
+    hoverText: "group-hover:text-emerald-600",
   },
   violet: {
     card: "border-purple-200/90 bg-gradient-to-br from-white via-purple-50/20 to-purple-50/50 hover:border-purple-400 hover:shadow-[0_8px_24px_rgba(168,85,247,0.16)]",
@@ -164,6 +168,7 @@ const KPI_VARIANTS: Record<string, {
     iconColor: "text-purple-600",
     borderAccent: "bg-gradient-to-r from-purple-400 to-violet-500",
     hoverArrow: "text-purple-600",
+    hoverText: "group-hover:text-purple-600",
   },
   amber: {
     card: "border-amber-200/90 bg-gradient-to-br from-white via-amber-50/20 to-amber-50/50 hover:border-amber-400 hover:shadow-[0_8px_24px_rgba(245,158,11,0.16)]",
@@ -171,6 +176,7 @@ const KPI_VARIANTS: Record<string, {
     iconColor: "text-amber-600",
     borderAccent: "bg-gradient-to-r from-amber-400 to-yellow-500",
     hoverArrow: "text-amber-600",
+    hoverText: "group-hover:text-amber-600",
   },
   rose: {
     card: "border-rose-200/90 bg-gradient-to-br from-white via-rose-50/20 to-rose-50/50 hover:border-rose-400 hover:shadow-[0_8px_24px_rgba(244,63,94,0.16)]",
@@ -178,6 +184,7 @@ const KPI_VARIANTS: Record<string, {
     iconColor: "text-rose-600",
     borderAccent: "bg-gradient-to-r from-rose-400 to-red-500",
     hoverArrow: "text-rose-600",
+    hoverText: "group-hover:text-rose-600",
   },
 };
 
@@ -208,8 +215,13 @@ export function KpiCard({
 
   let chosenVariant = variant === "brand" ? "orange" : variant;
   if (!chosenVariant) {
+    const l = (label || "").toLowerCase();
     const colorStr = `${iconColor ?? ""} ${iconBg ?? ""}`;
-    if (colorStr.includes("blue")) chosenVariant = "blue";
+    if (l.includes("compan") || l.includes("partnership")) chosenVariant = "orange";
+    else if (l.includes("intern") || l.includes("student")) chosenVariant = "violet";
+    else if (l.includes("mentor")) chosenVariant = "emerald";
+    else if (l.includes("training") || l.includes("plan") || l.includes("syllabus") || l.includes("module")) chosenVariant = "blue";
+    else if (colorStr.includes("blue")) chosenVariant = "blue";
     else if (colorStr.includes("success") || colorStr.includes("emerald")) chosenVariant = "emerald";
     else if (colorStr.includes("buddy") || colorStr.includes("violet") || colorStr.includes("purple")) chosenVariant = "violet";
     else if (colorStr.includes("amber") || colorStr.includes("yellow")) chosenVariant = "amber";
@@ -249,7 +261,7 @@ export function KpiCard({
         <p
           className={cn(
             "text-2xl font-bold text-text-primary leading-none transition-colors",
-            isInteractive && "group-hover:text-brand"
+            isInteractive && theme.hoverText
           )}
         >
           {value}

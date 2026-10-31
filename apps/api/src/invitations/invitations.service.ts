@@ -14,7 +14,7 @@ export class InvitationsService {
     private prisma: PrismaService,
     private usersService: UsersService,
     private emailService: EmailService,
-  ) {}
+  ) { }
 
   async createInvitation(dto: CreateInvitationDto, invitedById: string): Promise<Invitation & { emailSent: boolean }> {
     const existingUser = await this.usersService.findByEmail(dto.email);

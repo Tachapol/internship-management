@@ -142,10 +142,10 @@ export default function StudentDetailPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        <KpiCard label="Days Present" value={presentCount} icon={CalendarCheck} iconBg="bg-success/10" iconColor="text-success" />
-        <KpiCard label="Days Late" value={lateCount} icon={CalendarCheck} iconBg="bg-amber-50" iconColor="text-amber-600" />
-        <KpiCard label="Modules Completed" value={`${completedModules}/${allModules.length}`} icon={BookOpen} />
-        <KpiCard label="Leave Requests" value={leaves.length} icon={FileSpreadsheet} iconBg="bg-buddy/10" iconColor="text-buddy" />
+        <KpiCard label="Days Present" value={presentCount} icon={CalendarCheck} variant="emerald" />
+        <KpiCard label="Days Late" value={lateCount} icon={CalendarCheck} variant="amber" />
+        <KpiCard label="Modules Completed" value={`${completedModules}/${allModules.length}`} icon={BookOpen} variant="blue" />
+        <KpiCard label="Leave Requests" value={leaves.length} icon={FileSpreadsheet} variant="violet" />
       </div>
 
       {/* Content Grid */}

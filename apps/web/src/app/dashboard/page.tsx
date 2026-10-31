@@ -973,7 +973,7 @@ function MentorDashboard({ data, onRefresh }: { data: MentorStats; onRefresh: ()
           icon={CalendarCheck} variant="emerald" href="/attendance" />
         <KpiCard label="Training Completion" value={`${data.trainingPlanProgress.rate}%`}
           sub={`${data.trainingPlanProgress.completed} / ${data.trainingPlanProgress.total} weeks finished`}
-          icon={BookOpen} variant="orange" href="/training-plans" />
+          icon={BookOpen} variant="blue" href="/training-plans" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

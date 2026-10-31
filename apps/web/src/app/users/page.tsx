@@ -171,11 +171,10 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
               </div>
             </div>
 
-            <div className={`p-3 rounded-xl border text-xs leading-relaxed ${
-              successData.emailSent
+            <div className={`p-3 rounded-xl border text-xs leading-relaxed ${successData.emailSent
                 ? "bg-emerald-50/70 border-emerald-200 text-emerald-800"
                 : "bg-amber-50/70 border-amber-200 text-amber-900"
-            }`}>
+              }`}>
               {successData.emailSent ? (
                 <p>✅ An invitation email has been dispatched to <strong>{successData.email}</strong>.</p>
               ) : (
@@ -278,7 +277,7 @@ function UsersPageContent() {
         setMeta(parsed.meta || { total: 0, totalPages: 1 });
         setLoading(false);
       }
-    } catch {}
+    } catch { }
   }, [cacheKey]);
 
   const load = React.useCallback(() => {
@@ -291,7 +290,7 @@ function UsersPageContent() {
         setMeta({ total: res.meta.total, totalPages: res.meta.totalPages });
         try {
           sessionStorage.setItem(cacheKey, JSON.stringify(res));
-        } catch {}
+        } catch { }
       })
       .catch((e) => {
         if (users.length === 0) setError(e.message);
@@ -341,11 +340,10 @@ function UsersPageContent() {
           <button
             key={tab.value}
             onClick={() => { setRoleFilter(tab.value); setPage(1); }}
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${
-              roleFilter === tab.value
+            className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${roleFilter === tab.value
                 ? "border-brand text-brand"
                 : "border-transparent text-text-muted hover:text-text-primary"
-            }`}
+              }`}
           >
             {tab.label}
           </button>

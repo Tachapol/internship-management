@@ -188,11 +188,11 @@ function AttendancePageContent() {
       {/* Monthly Summary KPIs */}
       {report && (
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <KpiCard label="Present" value={report.present} icon={CheckCircle} iconBg="bg-emerald-50 border border-emerald-100" iconColor="text-emerald-600" />
-          <KpiCard label="Late" value={report.late} icon={AlertCircle} iconBg="bg-amber-50 border border-amber-100" iconColor="text-amber-600" />
-          <KpiCard label="Absent" value={report.absent} icon={XCircle} iconBg="bg-rose-50 border border-rose-100" iconColor="text-rose-600" />
-          <KpiCard label="On Leave" value={report.onLeave} icon={Clock} iconBg="bg-violet-50 border border-violet-100" iconColor="text-violet-600" />
-          <KpiCard label="Attendance Rate" value={`${report.attendanceRate?.toFixed(1) ?? 0}%`} icon={CalendarCheck} iconBg="bg-brand/10 border border-brand/20" iconColor="text-brand" />
+          <KpiCard label="Present" value={report.present} icon={CheckCircle} variant="emerald" />
+          <KpiCard label="Late" value={report.late} icon={AlertCircle} variant="amber" />
+          <KpiCard label="Absent" value={report.absent} icon={XCircle} variant="rose" />
+          <KpiCard label="On Leave" value={report.onLeave} icon={Clock} variant="violet" />
+          <KpiCard label="Attendance Rate" value={`${report.attendanceRate?.toFixed(1) ?? 0}%`} icon={CalendarCheck} variant="orange" />
         </div>
       )}
 
