@@ -1,0 +1,5 @@
+Built-in image_gen edit of devplus-logo-v1.png.
+
+Edit the supplied DevPlus logo: retain ONLY the orange D-shaped symbol including its integrated plus detail, remove the entire black DevPlus wordmark. Preserve the symbol identity, proportions and orange color. Center the isolated symbol on a square transparent canvas with only a small even margin around it. Clean smooth edges suitable for a website logo and favicon. No text, no background, no shadows, no extra elements.
+
+Website asset: apps/web/public/branding/devplus-mark.png (256px PNG with alpha).

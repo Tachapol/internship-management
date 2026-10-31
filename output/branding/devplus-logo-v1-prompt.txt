@@ -1,0 +1,3 @@
+Generated using the built-in image_gen tool.
+
+Use case: logo-brand. Create one polished logo for DevPlus, an internship management web application. Horizontal lockup: a distinctive geometric D monogram combined with a plus symbol on the left, exact wordmark "DevPlus" on the right. Convey development, mentorship and growth through the clean geometry without extra literal objects. Minimal flat vector-style brand design, strong readable silhouette at small website-header sizes, carefully balanced spacing. Brand orange #FF8C37 for the symbol and near-black #1A1A1A for the wordmark; modern bold sans-serif typography. Transparent background. Single logo only, centered with modest clearspace, no mockup, no presentation board, no gradients, no shadows, no slogan, no watermark.
