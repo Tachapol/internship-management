@@ -25,7 +25,17 @@ async function getNestApp(): Promise<INestApplication> {
   }));
 
   // Route to serve OpenAPI/Swagger JSON directly with full CORS headers
-  expressApp.get(['/api/docs-json', '/docs-json'], (_req, res) => {
+  expressApp.get(['/api/docs-json', '/docs-json'], (req, res) => {
+    const origin = (req.headers && req.headers.origin) || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    if (req.headers && req.headers.origin) {
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+    );
     res.setHeader('Content-Type', 'application/json');
     res.json(swaggerDocument);
   });
