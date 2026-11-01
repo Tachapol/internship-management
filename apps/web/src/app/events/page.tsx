@@ -6,6 +6,7 @@ import { eventsApi, companiesApi, type EventDetail } from "../../lib/api";
 import type { Company } from "../../lib/types";
 import { useAuth } from "../../lib/auth-context";
 import { PageHeader, Card, CardBody, CardHeader, EmptyState, ErrorState } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { Calendar, MapPin, Users, Plus, X, Loader2, Info, Building2, CheckCircle2, ChevronRight, Clock } from "lucide-react";
 import { formatDate, formatDateTime } from "../../lib/utils";
 
@@ -239,22 +240,17 @@ function EventFormModal({
                   <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> Loading businesses...
                 </div>
               ) : canSelectCompany ? (
-                <select
-                  required
+                <CustomSelect
                   value={companyId}
-                  onChange={(e) => setCompanyId(e.target.value)}
-                  className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-xs font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-                >
-                  {companies.length === 0 ? (
-                    <option value="">No companies found</option>
-                  ) : (
-                    companies.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))
-                  )}
-                </select>
+                  onChange={(val) => setCompanyId(val)}
+                  placeholder={companies.length === 0 ? "No companies found" : "Select company"}
+                  options={companies.map((c) => ({
+                    value: c.id,
+                    label: c.name,
+                  }))}
+                  className="w-full"
+                  size="sm"
+                />
               ) : (
                 <div className="h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-xs flex items-center text-text-primary font-semibold">
                   {companies.find((c) => c.id === companyId)?.name || "Your Assigned Company"}

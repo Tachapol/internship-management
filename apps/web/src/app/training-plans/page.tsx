@@ -6,6 +6,7 @@ import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { trainingPlansApi, teamsApi } from "../../lib/api";
 import type { TrainingPlan, TrainingPlanModule, Team, TrainingPlanStatus } from "../../lib/types";
 import { PageHeader, StatusBadge, EmptyState, ErrorState, Card, CardHeader } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { BookOpen, Plus, Search, ExternalLink, FileText, CheckCircle2, MoreVertical, Loader2, X, Trash2, Edit2, Calendar } from "lucide-react";
 import { useAuth } from "../../lib/auth-context";
 import { formatDate } from "../../lib/utils";
@@ -75,18 +76,17 @@ function CreatePlanModal({ onClose, onDone, isSuperAdmin, userCompanyId }: { onC
                 <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> Loading teams...
               </div>
             ) : (
-              <select
-                required
+              <CustomSelect
                 value={teamId}
-                onChange={(e) => setTeamId(e.target.value)}
-                className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-              >
-                {teams.length === 0 ? (
-                  <option value="">No teams registered</option>
-                ) : (
-                  teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)
-                )}
-              </select>
+                onChange={(val) => setTeamId(val)}
+                placeholder={teams.length === 0 ? "No teams registered" : "Select team"}
+                options={teams.map((t) => ({
+                  value: t.id,
+                  label: t.name,
+                }))}
+                className="w-full"
+                size="sm"
+              />
             )}
           </div>
           <div>

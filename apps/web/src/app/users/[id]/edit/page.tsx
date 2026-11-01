@@ -7,6 +7,7 @@ import { DashboardShell } from "../../../../components/layout/dashboard-shell";
 import { usersApi, companiesApi } from "../../../../lib/api";
 import type { User, UserRole, UserStatus } from "../../../../lib/types";
 import { Loader2, ArrowLeft, Save, AlertCircle } from "lucide-react";
+import { CustomSelect } from "../../../../components/ui/select";
 
 export default function EditUserPage() {
   const { id } = useParams<{ id: string }>();
@@ -147,65 +148,71 @@ export default function EditUserPage() {
                 {/* System Role */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-text-primary">System Role</label>
-                  <select
+                  <CustomSelect
                     value={role}
-                    onChange={(e) => setRole(e.target.value as UserRole)}
-                    className="w-full h-10 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30 transition-all"
-                  >
-                    <option value="STUDENT">Student / Intern</option>
-                    <option value="MENTOR">Mentor Supervisor</option>
-                    <option value="BD_TEAM">BD Team Member</option>
-                  </select>
+                    onChange={(val) => setRole(val as UserRole)}
+                    options={[
+                      { value: "STUDENT", label: "Student / Intern" },
+                      { value: "MENTOR", label: "Mentor Supervisor" },
+                      { value: "BD_TEAM", label: "BD Team Member" },
+                    ]}
+                    className="w-full"
+                    size="lg"
+                  />
                 </div>
 
                 {/* Account Status */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-text-primary">Status</label>
-                  <select
+                  <CustomSelect
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as UserStatus)}
-                    className="w-full h-10 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30 transition-all"
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="PENDING_SETUP">Pending Setup</option>
-                    <option value="INACTIVE">Inactive</option>
-                  </select>
+                    onChange={(val) => setStatus(val as UserStatus)}
+                    options={[
+                      { value: "ACTIVE", label: "Active" },
+                      { value: "PENDING_SETUP", label: "Pending Setup" },
+                      { value: "INACTIVE", label: "Inactive" },
+                    ]}
+                    className="w-full"
+                    size="lg"
+                  />
                 </div>
               </div>
 
               {/* Company */}
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-text-primary">Assigned Company</label>
-                <select
+                <CustomSelect
                   value={companyId}
-                  onChange={(e) => setCompanyId(e.target.value)}
-                  className="w-full h-10 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30 transition-all"
-                >
-                  <option value="">No Company Assigned</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setCompanyId(val)}
+                  options={[
+                    { value: "", label: "No Company Assigned" },
+                    ...companies.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                    })),
+                  ]}
+                  className="w-full"
+                  size="lg"
+                />
               </div>
 
               {/* Mentor (Only useful or showing if user is STUDENT) */}
               {role === "STUDENT" && (
                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
                   <label className="text-sm font-semibold text-text-primary">Assigned Mentor</label>
-                  <select
+                  <CustomSelect
                     value={mentorId}
-                    onChange={(e) => setMentorId(e.target.value)}
-                    className="w-full h-10 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30 transition-all"
-                  >
-                    <option value="">No Mentor Assigned</option>
-                    {mentors.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setMentorId(val)}
+                    options={[
+                      { value: "", label: "No Mentor Assigned" },
+                      ...mentors.map((m) => ({
+                        value: m.id,
+                        label: m.name,
+                      })),
+                    ]}
+                    className="w-full"
+                    size="lg"
+                  />
                 </div>
               )}
             </div>

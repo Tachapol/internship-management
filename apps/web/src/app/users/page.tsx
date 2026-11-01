@@ -7,6 +7,7 @@ import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { usersApi, companiesApi, invitationsApi } from "../../lib/api";
 import type { User, UserRole, Company } from "../../lib/types";
 import { PageHeader, StatusBadge, EmptyState, ErrorState, DataTable, Card } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { Users, UserPlus, Search, MoreVertical, Mail, Loader2, Link2, Check, Upload, Copy, CheckCircle2, AlertCircle, RotateCw } from "lucide-react";
 import { formatDate } from "../../lib/utils";
 import { useAuth } from "../../lib/auth-context";
@@ -110,15 +111,17 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
               </div>
               <div>
                 <label className="text-xs font-semibold text-text-primary block mb-1">System Role *</label>
-                <select
+                <CustomSelect
                   value={role}
-                  onChange={e => setRole(e.target.value as any)}
-                  className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-                >
-                  <option value="STUDENT">Student / Intern</option>
-                  <option value="MENTOR">Mentor Supervisor</option>
-                  <option value="BD_TEAM">BD Team Member</option>
-                </select>
+                  onChange={(val) => setRole(val as any)}
+                  options={[
+                    { value: "STUDENT", label: "Student / Intern" },
+                    { value: "MENTOR", label: "Mentor Supervisor" },
+                    { value: "BD_TEAM", label: "BD Team Member" },
+                  ]}
+                  className="w-full"
+                  size="sm"
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-text-primary block mb-1">Assigned Organisation *</label>
@@ -127,15 +130,17 @@ function InviteUserModal({ onClose, onDone }: { onClose: () => void; onDone: () 
                     <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> Loading companies...
                   </div>
                 ) : (
-                  <select
-                    required
+                  <CustomSelect
                     value={companyId}
-                    onChange={e => setCompanyId(e.target.value)}
-                    className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-                  >
-                    <option value="">{companies.length === 0 ? "No active organisations available" : "Select organisation"}</option>
-                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                    onChange={(val) => setCompanyId(val)}
+                    placeholder={companies.length === 0 ? "No active organisations available" : "Select organisation"}
+                    options={companies.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                    }))}
+                    className="w-full"
+                    size="sm"
+                  />
                 )}
               </div>
               {error && <p className="text-xs text-danger font-medium mt-1">{error}</p>}
@@ -434,16 +439,18 @@ function UsersPageContent() {
               className="w-full h-9 pl-9 pr-3 bg-bgInput border border-borderGray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
             />
           </div>
-          <select
+          <CustomSelect
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-          >
-            <option value="">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-            <option value="PENDING_SETUP">Pending Setup</option>
-          </select>
+            onChange={(val) => { setStatusFilter(val); setPage(1); }}
+            options={[
+              { value: "", label: "All Statuses" },
+              { value: "ACTIVE", label: "Active" },
+              { value: "INACTIVE", label: "Inactive" },
+              { value: "PENDING_SETUP", label: "Pending Setup" },
+            ]}
+            className="w-40"
+            size="sm"
+          />
         </div>
       </Card>
 

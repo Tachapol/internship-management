@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { Card, CardHeader, CardBody } from "../../../components/ui/shared";
+import { CustomSelect } from "../../../components/ui/select";
 
 // ─── Helpers ──────────────────────────────────────────────────
 const STAFF_ROLES = ["SUPER_ADMIN", "BD_TEAM", "MENTOR"];
@@ -103,17 +104,18 @@ function StatusChanger({
   return (
     <div className="flex items-center gap-2">
       {loading && <Loader2 className="h-4 w-4 animate-spin text-text-muted" />}
-      <select
+      <CustomSelect
         id="status-changer"
         value={currentStatus}
-        onChange={(e) => handleChange(e.target.value)}
+        onChange={(val) => handleChange(val)}
         disabled={loading}
-        className="text-xs font-semibold border border-borderGray rounded-lg px-2.5 py-1.5 bg-bgInput text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all disabled:opacity-60"
-      >
-        {Object.entries(STATUS_META).map(([val, meta]) => (
-          <option key={val} value={val}>{meta.label}</option>
-        ))}
-      </select>
+        options={Object.entries(STATUS_META).map(([val, meta]) => ({
+          value: val,
+          label: meta.label,
+        }))}
+        className="w-36"
+        size="sm"
+      />
     </div>
   );
 }
@@ -396,20 +398,21 @@ function TicketDetailContent() {
                 <p className="text-text-muted font-medium mb-0.5">Assigned to</p>
                 {isSuperAdminOrBd ? (
                   <div className="space-y-1.5 mt-1">
-                    <select
+                    <CustomSelect
                       value={ticket.assignedTo?.id || ""}
-                      onChange={(e) => handleAssign(e.target.value)}
-                      className="w-full h-8 px-2 bg-bgInput border border-borderGray rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/30"
-                    >
-                      <option value="">Unassigned</option>
-                      {staffUsers
-                        .filter((u) => u.id !== ticket.author.id)
-                        .map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.name} ({u.role.replace("_", " ")})
-                          </option>
-                        ))}
-                    </select>
+                      onChange={(val) => handleAssign(val)}
+                      options={[
+                        { value: "", label: "Unassigned" },
+                        ...staffUsers
+                          .filter((u) => u.id !== ticket.author.id)
+                          .map((u) => ({
+                            value: u.id,
+                            label: `${u.name} (${u.role.replace("_", " ")})`,
+                          })),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                    />
                     {!ticket.assignedTo && user?.id !== ticket.author.id && (
                       <button
                         id="btn-assign-self"

@@ -12,6 +12,7 @@ import {
   CardSkeleton, ErrorState, KpiCard, StatusBadge,
   Card, CardHeader, CardBody,
 } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import {
   Building2, Users, GraduationCap, CalendarCheck, FileSpreadsheet,
   BookOpen, Bell, CheckCircle2, Clock, Award, RefreshCw,
@@ -750,44 +751,52 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
             </div>
             <div>
               <label className="text-xs font-bold text-text-primary block mb-1 uppercase tracking-wider">Business (Company)</label>
-              <select
+              <CustomSelect
                 value={filterCompanyId}
-                onChange={(e) => setFilterCompanyId(e.target.value)}
-                className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/30"
-              >
-                <option value="">All Businesses</option>
-                {data.companyOverview.map((c, i) => (
-                  <option key={c.companyId || (c as any).id || `opt-comp-${i}`} value={c.companyId || (c as any).id}>{c.name}</option>
-                ))}
-              </select>
+                onChange={(val) => setFilterCompanyId(val)}
+                options={[
+                  { value: "", label: "All Businesses" },
+                  ...data.companyOverview.map((c, i) => ({
+                    value: c.companyId || (c as any).id || `opt-comp-${i}`,
+                    label: c.name,
+                  })),
+                ]}
+                className="w-full"
+                size="sm"
+              />
             </div>
             <div>
               <label className="text-xs font-bold text-text-primary block mb-1 uppercase tracking-wider">Mentor</label>
-              <select
+              <CustomSelect
                 value={filterMentorId}
-                onChange={(e) => setFilterMentorId(e.target.value)}
-                className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/30"
-              >
-                <option value="">All Mentors</option>
-                {data.mentorPerformance.map((m, i) => (
-                  <option key={m.mentorId || (m as any).id || `opt-men-${i}`} value={m.mentorId || (m as any).id}>{m.name}</option>
-                ))}
-              </select>
+                onChange={(val) => setFilterMentorId(val)}
+                options={[
+                  { value: "", label: "All Mentors" },
+                  ...data.mentorPerformance.map((m, i) => ({
+                    value: m.mentorId || (m as any).id || `opt-men-${i}`,
+                    label: m.name,
+                  })),
+                ]}
+                className="w-full"
+                size="sm"
+              />
             </div>
             <div>
               <label className="text-xs font-bold text-text-primary block mb-1 uppercase tracking-wider">Attendance Status</label>
-              <select
+              <CustomSelect
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand/30"
-              >
-                <option value="">All Statuses</option>
-                <option value="PRESENT">Present</option>
-                <option value="LATE">Late</option>
-                <option value="ABSENT">Absent</option>
-                <option value="ON_LEAVE">On Leave</option>
-              </select>
-          </div>
+                onChange={(val) => setFilterStatus(val)}
+                options={[
+                  { value: "", label: "All Statuses" },
+                  { value: "PRESENT", label: "Present" },
+                  { value: "LATE", label: "Late" },
+                  { value: "ABSENT", label: "Absent" },
+                  { value: "ON_LEAVE", label: "On Leave" },
+                ]}
+                className="w-full"
+                size="sm"
+              />
+            </div>
         </div>
       </div>
 

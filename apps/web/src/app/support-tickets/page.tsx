@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Card, CardHeader, CardBody, PageHeader, EmptyState } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { CreateTicketModal } from "../../components/support/create-ticket-modal";
 
 // ─── Constants ────────────────────────────────────────────────
@@ -244,32 +245,38 @@ function SupportTicketsAdminContent() {
             />
           </div>
 
-          {/* Status Filter */}
+          {/* Status & Priority Filters */}
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-text-muted shrink-0" />
-            <select
+            <CustomSelect
               id="filter-status"
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="text-sm border border-borderGray rounded-lg px-3 py-2 bg-bgInput text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all"
-            >
-              <option value="ALL">All Status</option>
-              {Object.entries(STATUS_META).map(([val, m]) => (
-                <option key={val} value={val}>{m.label}</option>
-              ))}
-            </select>
+              onChange={(val) => setFilterStatus(val)}
+              options={[
+                { value: "ALL", label: "All Status" },
+                ...Object.entries(STATUS_META).map(([val, m]) => ({
+                  value: val,
+                  label: m.label,
+                })),
+              ]}
+              className="w-36"
+              size="sm"
+            />
 
-            <select
+            <CustomSelect
               id="filter-priority"
               value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value)}
-              className="text-sm border border-borderGray rounded-lg px-3 py-2 bg-bgInput text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all"
-            >
-              <option value="ALL">All Priority</option>
-              {Object.entries(PRIORITY_META).map(([val, m]) => (
-                <option key={val} value={val}>{m.label}</option>
-              ))}
-            </select>
+              onChange={(val) => setFilterPriority(val)}
+              options={[
+                { value: "ALL", label: "All Priority" },
+                ...Object.entries(PRIORITY_META).map(([val, m]) => ({
+                  value: val,
+                  label: m.label,
+                })),
+              ]}
+              className="w-36"
+              size="sm"
+            />
           </div>
         </CardBody>
       </Card>

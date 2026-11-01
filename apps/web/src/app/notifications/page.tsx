@@ -5,6 +5,7 @@ import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { notificationsApi } from "../../lib/api";
 import type { Notification } from "../../lib/types";
 import { PageHeader, EmptyState, ErrorState, Card } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { Bell, CheckCheck, Trash2, Info, CheckCircle, AlertTriangle, AlertCircle, CalendarCheck, FileSpreadsheet, BookOpen, Megaphone, Loader2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../lib/auth-context";
@@ -259,16 +260,18 @@ function BroadcastModal({ onClose, onDone }: { onClose: () => void; onDone: () =
           </div>
           <div>
             <label className="text-xs font-semibold text-text-primary block mb-1">Notification Type</label>
-            <select
+            <CustomSelect
               value={type}
-              onChange={e => setType(e.target.value)}
-              className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-            >
-              <option value="INFO">Information (Blue)</option>
-              <option value="SUCCESS">Success (Green)</option>
-              <option value="WARNING">Warning (Yellow)</option>
-              <option value="ALERT">Alert (Red)</option>
-            </select>
+              onChange={(val) => setType(val)}
+              options={[
+                { value: "INFO", label: "Information (Blue)" },
+                { value: "SUCCESS", label: "Success (Green)" },
+                { value: "WARNING", label: "Warning (Yellow)" },
+                { value: "ALERT", label: "Alert (Red)" },
+              ]}
+              className="w-full"
+              size="sm"
+            />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 h-9 border border-borderGray rounded-lg text-sm font-medium hover:bg-bgInput transition-colors">

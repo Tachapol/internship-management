@@ -6,6 +6,7 @@ import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { leaveRequestsApi } from "../../lib/api";
 import type { LeaveRequest, LeaveStatus } from "../../lib/types";
 import { PageHeader, StatusBadge, EmptyState, ErrorState, Card, CardHeader, CardBody } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { useAuth } from "../../lib/auth-context";
 import { FileSpreadsheet, Plus, Search, CheckCircle, XCircle, Loader2, MoreVertical, Paperclip } from "lucide-react";
 import { formatDate } from "../../lib/utils";
@@ -126,16 +127,18 @@ function SubmitLeaveModal({ onClose, onDone }: { onClose: () => void; onDone: ()
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label className="text-xs font-semibold text-text-primary block mb-1">Leave Type *</label>
-            <select
+            <CustomSelect
               value={type}
-              onChange={e => setType(e.target.value as any)}
-              className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-            >
-              <option value="SICK">Sick Leave</option>
-              <option value="CASUAL">Casual Leave</option>
-              <option value="ANNUAL">Annual Leave</option>
-              <option value="OTHER">Other Leave</option>
-            </select>
+              onChange={(val) => setType(val as any)}
+              options={[
+                { value: "SICK", label: "Sick Leave" },
+                { value: "CASUAL", label: "Casual Leave" },
+                { value: "ANNUAL", label: "Annual Leave" },
+                { value: "OTHER", label: "Other Leave" },
+              ]}
+              className="w-full"
+              size="sm"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

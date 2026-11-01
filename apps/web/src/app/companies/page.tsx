@@ -7,6 +7,7 @@ import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { companiesApi } from "../../lib/api";
 import type { Company } from "../../lib/types";
 import { PageHeader, StatusBadge, EmptyState, ErrorState, DataTable, Card } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { Building2, Plus, Search, MoreVertical, ExternalLink, Loader2 } from "lucide-react";
 import { formatDate } from "../../lib/utils";
 
@@ -144,14 +145,16 @@ function EditCompanyModal({ company, onClose, onDone }: { company: Company; onCl
           </div>
           <div>
             <label className="text-xs font-semibold text-text-primary block mb-1">Status</label>
-            <select
+            <CustomSelect
               value={formData.status}
-              onChange={e => setFormData({ ...formData, status: e.target.value as "ACTIVE" | "INACTIVE" })}
-              className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand font-semibold"
-            >
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
+              onChange={(val) => setFormData({ ...formData, status: val as "ACTIVE" | "INACTIVE" })}
+              options={[
+                { value: "ACTIVE", label: "Active" },
+                { value: "INACTIVE", label: "Inactive" },
+              ]}
+              className="w-full"
+              size="sm"
+            />
           </div>
           {error && <p className="text-xs text-danger font-medium mt-1">{error}</p>}
           <div className="flex gap-3 pt-2">
@@ -263,15 +266,17 @@ function CompaniesPageContent() {
               className="w-full h-9 pl-9 pr-3 bg-bgInput border border-borderGray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
             />
           </div>
-          <select
+          <CustomSelect
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand/30"
-          >
-            <option value="">All Status</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
+            onChange={(val) => { setStatusFilter(val); setPage(1); }}
+            options={[
+              { value: "", label: "All Status" },
+              { value: "ACTIVE", label: "Active" },
+              { value: "INACTIVE", label: "Inactive" },
+            ]}
+            className="w-36"
+            size="sm"
+          />
         </div>
       </Card>
 

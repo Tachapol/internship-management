@@ -6,6 +6,7 @@ import { useAuth } from "../../lib/auth-context";
 import { auditLogsApi } from "../../lib/api";
 import type { AuditLog } from "../../lib/types";
 import { PageHeader, DataTable, Card, CardBody, EmptyState, ErrorState } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { ShieldCheck, Search, Filter, Calendar, Eye, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 function AuditLogDetailsModal({ log, onClose }: { log: AuditLog; onClose: () => void }) {
@@ -203,34 +204,38 @@ export default function AuditLogsPage() {
         </div>
 
         <div>
-          <select
+          <CustomSelect
             value={actionFilter}
-            onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-            className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand text-text-primary font-medium"
-          >
-            <option value="">All Actions</option>
-            <option value="CREATE">CREATE</option>
-            <option value="UPDATE">UPDATE</option>
-            <option value="DELETE">DELETE</option>
-            <option value="LOGIN">LOGIN</option>
-            <option value="LOGOUT">LOGOUT</option>
-          </select>
+            onChange={(val) => { setActionFilter(val); setPage(1); }}
+            options={[
+              { value: "", label: "All Actions" },
+              { value: "CREATE", label: "CREATE" },
+              { value: "UPDATE", label: "UPDATE" },
+              { value: "DELETE", label: "DELETE" },
+              { value: "LOGIN", label: "LOGIN" },
+              { value: "LOGOUT", label: "LOGOUT" },
+            ]}
+            className="w-full"
+            size="sm"
+          />
         </div>
 
         <div>
-          <select
+          <CustomSelect
             value={entityFilter}
-            onChange={(e) => { setEntityFilter(e.target.value); setPage(1); }}
-            className="w-full h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand text-text-primary font-medium"
-          >
-            <option value="">All Resource Types</option>
-            <option value="Company">Company</option>
-            <option value="User">User</option>
-            <option value="Invitation">Invitation</option>
-            <option value="TrainingPlan">Training Plan</option>
-            <option value="LeaveRequest">Leave Request</option>
-            <option value="Attendance">Attendance</option>
-          </select>
+            onChange={(val) => { setEntityFilter(val); setPage(1); }}
+            options={[
+              { value: "", label: "All Resource Types" },
+              { value: "Company", label: "Company" },
+              { value: "User", label: "User" },
+              { value: "Invitation", label: "Invitation" },
+              { value: "TrainingPlan", label: "Training Plan" },
+              { value: "LeaveRequest", label: "Leave Request" },
+              { value: "Attendance", label: "Attendance" },
+            ]}
+            className="w-full"
+            size="sm"
+          />
         </div>
 
         <div className="relative">

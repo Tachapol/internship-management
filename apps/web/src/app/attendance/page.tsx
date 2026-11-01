@@ -7,6 +7,7 @@ import { DashboardShell } from "../../components/layout/dashboard-shell";
 import { attendanceApi } from "../../lib/api";
 import type { Attendance, AttendanceStatus } from "../../lib/types";
 import { PageHeader, StatusBadge, ErrorState, EmptyState, Card, CardHeader, CardBody, KpiCard } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { useAuth } from "../../lib/auth-context";
 import { CalendarCheck, Clock, CheckCircle, XCircle, AlertCircle, Loader2, MapPin, FileText, Check, X, Edit3 } from "lucide-react";
 import { formatDate } from "../../lib/utils";
@@ -374,10 +375,17 @@ function AttendancePageContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 flex-wrap bg-white border border-borderGray rounded-2xl p-4 shadow-sm">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-text-primary uppercase tracking-wider">Select Period</span>
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))}
-            className="h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-brand/30 transition-all">
-            {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
+          <CustomSelect
+            value={year}
+            onChange={(val) => setYear(Number(val))}
+            options={[
+              { value: 2024, label: "2024" },
+              { value: 2025, label: "2025" },
+              { value: 2026, label: "2026" },
+            ]}
+            className="w-28"
+            size="sm"
+          />
         </div>
         <div className="flex flex-wrap gap-1">
           {MONTHS.map((m, i) => (

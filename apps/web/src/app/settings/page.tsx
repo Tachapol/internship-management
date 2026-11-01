@@ -6,6 +6,7 @@ import { useAuth } from "../../lib/auth-context";
 import { authApi, usersApi, notificationsApi } from "../../lib/api";
 import type { NotificationPreferences, NotificationPreferencesResponse } from "../../lib/types";
 import { PageHeader, Card, CardHeader, CardBody } from "../../components/ui/shared";
+import { CustomSelect } from "../../components/ui/select";
 import { User, Shield, Bell, Database, Globe, Loader2, CheckCircle, Eye, EyeOff } from "lucide-react";
 
 function SettingSection({ icon: Icon, title, description, children }: {
@@ -401,12 +402,17 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-text-primary block mb-1.5">Invitation Link Expiry</label>
-                <select className="h-9 px-3 bg-bgInput border border-borderGray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
-                  <option value="3">3 days</option>
-                  <option value="7" selected>7 days</option>
-                  <option value="14">14 days</option>
-                  <option value="30">30 days</option>
-                </select>
+                <CustomSelect
+                  defaultValue="7"
+                  options={[
+                    { value: "3", label: "3 days" },
+                    { value: "7", label: "7 days" },
+                    { value: "14", label: "14 days" },
+                    { value: "30", label: "30 days" },
+                  ]}
+                  className="w-48"
+                  size="sm"
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-text-primary block mb-1.5">Platform Name</label>
