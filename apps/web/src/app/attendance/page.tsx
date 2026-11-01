@@ -8,7 +8,7 @@ import { attendanceApi } from "../../lib/api";
 import type { Attendance, AttendanceStatus } from "../../lib/types";
 import { PageHeader, StatusBadge, ErrorState, EmptyState, Card, CardHeader, CardBody, KpiCard } from "../../components/ui/shared";
 import { useAuth } from "../../lib/auth-context";
-import { CalendarCheck, Clock, CheckCircle, XCircle, AlertCircle, Loader2, MapPin, Globe, FileText } from "lucide-react";
+import { CalendarCheck, Clock, CheckCircle, XCircle, AlertCircle, Loader2, MapPin, FileText } from "lucide-react";
 import { formatDate } from "../../lib/utils";
 import { cn } from "../../lib/utils";
 
@@ -295,16 +295,9 @@ function AttendancePageContent() {
                         {/* Check-In */}
                         <td className="px-5 py-3.5 whitespace-nowrap">
                           {r.checkIn ? (
-                            <div className="space-y-0.5">
-                              <span className="font-bold text-text-primary">
-                                {new Date(r.checkIn).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-                              </span>
-                              {r.checkInIp && (
-                                <span className="text-[10px] text-text-muted flex items-center gap-1 font-mono">
-                                  <Globe className="h-2.5 w-2.5 shrink-0" /> {r.checkInIp}
-                                </span>
-                              )}
-                            </div>
+                            <span className="font-bold text-text-primary">
+                              {new Date(r.checkIn).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
                           ) : (
                             <span className="text-text-muted text-xs">—</span>
                           )}
@@ -313,16 +306,9 @@ function AttendancePageContent() {
                         {/* Check-Out */}
                         <td className="px-5 py-3.5 whitespace-nowrap">
                           {r.checkOut ? (
-                            <div className="space-y-0.5">
-                              <span className="font-semibold text-text-primary">
-                                {new Date(r.checkOut).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-                              </span>
-                              {r.checkOutIp && (
-                                <span className="text-[10px] text-text-muted flex items-center gap-1 font-mono">
-                                  <Globe className="h-2.5 w-2.5 shrink-0" /> {r.checkOutIp}
-                                </span>
-                              )}
-                            </div>
+                            <span className="font-semibold text-text-primary">
+                              {new Date(r.checkOut).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
                           ) : (
                             <span className="text-text-muted text-xs">—</span>
                           )}
