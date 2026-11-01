@@ -158,7 +158,17 @@ export class UsersController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update user',
-    description: 'Update user profile details or administrative assignments (role, company, mentor).',
+    description: 'Update user profile details (name, phone) or administrative assignments (status, role, company, mentor).',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'Ethan Hunt (Senior Intern)' },
+        phone: { type: 'string', example: '+66 81 234 5678' },
+        status: { type: 'string', enum: ['ACTIVE', 'INACTIVE'], example: 'ACTIVE' },
+      },
+    },
   })
   @ApiResponse({ status: 200, description: 'User updated successfully.' })
   @ApiResponse({ status: 403, description: 'Forbidden: Insufficient permissions to modify this user.' })
