@@ -156,7 +156,7 @@ export function KpiCard({
   const isInteractive = Boolean(href || onClick);
 
   // Icon styling: defaults to DevPlus Brand Orange unless explicitly specified
-  let resolvedIconBg = iconBg || "bg-brand/10";
+  let resolvedIconBg = iconBg || "bg-brand/10 border border-brand/20";
   let resolvedIconColor = iconColor || "text-brand";
 
   if (variant && !iconBg && !iconColor) {

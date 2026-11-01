@@ -142,15 +142,38 @@ function SuperAdminDashboard({ data, onRefresh }: { data: SuperAdminStats; onRef
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Total Companies" value={data.totalCompanies} sub="Partner organization ecosystem"
-          icon={Building2} href="/companies" />
-        <KpiCard label="Active Interns"
+        <KpiCard
+          label="Total Companies"
+          value={data.totalCompanies}
+          sub="Partner organization ecosystem"
+          icon={Building2}
+          variant="orange"
+          href="/companies"
+        />
+        <KpiCard
+          label="Active Interns"
           value={<>{data.activeStudents}<span className="text-sm font-semibold text-text-muted"> / {data.totalStudents}</span></>}
-          sub="Internship status active" icon={Users} href="/users?role=STUDENT" />
-        <KpiCard label="System Mentors" value={data.totalMentors} sub="Ecosystem supervisors"
-          icon={GraduationCap} href="/mentors" />
-        <KpiCard label="Total Training Plans" value={data.totalTrainingPlans} sub="Aggregated syllabus weeks"
-          icon={BookOpen} href="/training-plans" />
+          sub="Internship status active"
+          icon={Users}
+          variant="violet"
+          href="/users?role=STUDENT"
+        />
+        <KpiCard
+          label="System Mentors"
+          value={data.totalMentors}
+          sub="Ecosystem supervisors"
+          icon={GraduationCap}
+          variant="emerald"
+          href="/mentors"
+        />
+        <KpiCard
+          label="Total Training Plans"
+          value={data.totalTrainingPlans}
+          sub="Aggregated syllabus weeks"
+          icon={BookOpen}
+          variant="blue"
+          href="/training-plans"
+        />
       </div>
 
       {/* Main Grid */}
@@ -453,15 +476,51 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
         <>
           {/* Metrics Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard label="Active Partnerships" value={data.companyOverview.filter(c => c.status === "ACTIVE").length} icon={Building2} href="/companies" />
-            <KpiCard label="Total Students" value={data.totalStudents} icon={Users} href="/users?role=STUDENT" />
-            <KpiCard label="Total Mentors" value={data.totalMentors} icon={GraduationCap} href="/users?role=MENTOR" />
-            <KpiCard label="Total Training Plans" value={data.totalTrainingPlans} icon={BookOpen} href="/training-plans" />
+            <KpiCard
+              label="Active Partnerships"
+              value={data.companyOverview.filter(c => c.status === "ACTIVE").length}
+              sub={`${data.companyOverview.length} registered partner companies`}
+              icon={Building2}
+              variant="orange"
+              href="/companies"
+            />
+            <KpiCard
+              label="Total Students"
+              value={data.totalStudents}
+              sub="Across active cohort cycles"
+              icon={Users}
+              variant="violet"
+              href="/users?role=STUDENT"
+            />
+            <KpiCard
+              label="Total Mentors"
+              value={data.totalMentors}
+              sub="Supervising company mentors"
+              icon={GraduationCap}
+              variant="emerald"
+              href="/users?role=MENTOR"
+            />
+            <KpiCard
+              label="Total Training Plans"
+              value={data.totalTrainingPlans}
+              sub="Structured syllabus modules"
+              icon={BookOpen}
+              variant="blue"
+              href="/training-plans"
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <Card className="lg:col-span-2">
-              <CardHeader><h3 className="font-bold text-text-primary text-sm">Company Overview</h3></CardHeader>
+              <CardHeader className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-brand" />
+                  <h3 className="font-bold text-text-primary text-sm">Company Overview</h3>
+                </div>
+                <a href="/companies" className="text-xs font-bold text-brand hover:underline inline-flex items-center gap-0.5">
+                  View all <ChevronRight className="h-3 w-3" />
+                </a>
+              </CardHeader>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead className="bg-bgPage border-b border-borderGray">
@@ -472,14 +531,37 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-borderGray">
-                    {data.companyOverview.map((c, i) => (
-                      <tr key={c.companyId || (c as any).id || `comp-${i}`} className="hover:bg-bgPage/50 transition-colors">
-                        <td className="px-4 py-3 text-sm font-semibold text-text-primary">{c.name}</td>
-                        <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
-                        <td className="px-4 py-3 text-sm font-semibold text-text-secondary">{c.studentCount} students</td>
-                        <td className="px-4 py-3 text-sm text-text-muted">{c.mentorCount} mentors</td>
-                      </tr>
-                    ))}
+                    {data.companyOverview.map((c, i) => {
+                      const initials = c.name
+                        .split(" ")
+                        .map(n => n[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase() || "CP";
+                      const colors = [
+                        "bg-brand/10 text-brand border-brand/20",
+                        "bg-blue-50 text-blue-600 border-blue-200",
+                        "bg-purple-50 text-purple-600 border-purple-200",
+                        "bg-emerald-50 text-emerald-600 border-emerald-200",
+                      ];
+                      const colorClass = colors[i % colors.length];
+
+                      return (
+                        <tr key={c.companyId || (c as any).id || `comp-${i}`} className="hover:bg-bgPage/50 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg border font-bold text-xs flex items-center justify-center shrink-0 ${colorClass}`}>
+                                {initials}
+                              </div>
+                              <span className="text-sm font-semibold text-text-primary">{c.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                          <td className="px-4 py-3 text-sm font-semibold text-text-secondary">{c.studentCount} students</td>
+                          <td className="px-4 py-3 text-sm text-text-muted">{c.mentorCount} mentors</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -487,41 +569,96 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
 
             <div className="space-y-5">
               <Card>
-                <CardHeader><h3 className="font-bold text-text-primary text-sm">Attendance Distribution</h3></CardHeader>
+                <CardHeader>
+                  <div className="flex items-center justify-between w-full">
+                    <h3 className="font-bold text-text-primary text-sm">Attendance Distribution</h3>
+                    <span className="text-[11px] font-semibold text-text-muted">{totalStats} records</span>
+                  </div>
+                </CardHeader>
                 <CardBody className="space-y-4">
-                  {([
-                    ["PRESENT", "bg-success", getPercentage(data.attendanceStats.PRESENT)],
-                    ["LATE", "bg-amber-400", getPercentage(data.attendanceStats.LATE)],
-                    ["ABSENT", "bg-danger", getPercentage(data.attendanceStats.ABSENT)],
-                    ["ON LEAVE", "bg-buddy", getPercentage(data.attendanceStats.ON_LEAVE)]
-                  ] as const).map(([label, color, val]) => (
-                    <div key={label}>
-                      <div className="flex justify-between text-[11px] font-bold mb-1.5">
-                        <span className="text-text-secondary">{label}</span>
-                        <span className="text-text-primary">{val}%</span>
-                      </div>
-                      <ProgressBar value={val} color={color} />
+                  {/* Single Continuous Segmented Stacked Bar */}
+                  <div className="space-y-2">
+                    <div className="h-2.5 w-full rounded-full bg-bgInput p-0.5 border border-borderGray flex overflow-hidden gap-0.5">
+                      {getPercentage(data.attendanceStats.PRESENT) > 0 && (
+                        <div
+                          style={{ width: `${getPercentage(data.attendanceStats.PRESENT)}%` }}
+                          className="h-full bg-emerald-500 rounded-l-full transition-all duration-300"
+                          title={`Present: ${getPercentage(data.attendanceStats.PRESENT)}%`}
+                        />
+                      )}
+                      {getPercentage(data.attendanceStats.LATE) > 0 && (
+                        <div
+                          style={{ width: `${getPercentage(data.attendanceStats.LATE)}%` }}
+                          className="h-full bg-amber-400 transition-all duration-300"
+                          title={`Late: ${getPercentage(data.attendanceStats.LATE)}%`}
+                        />
+                      )}
+                      {getPercentage(data.attendanceStats.ABSENT) > 0 && (
+                        <div
+                          style={{ width: `${getPercentage(data.attendanceStats.ABSENT)}%` }}
+                          className="h-full bg-rose-500 transition-all duration-300"
+                          title={`Absent: ${getPercentage(data.attendanceStats.ABSENT)}%`}
+                        />
+                      )}
+                      {getPercentage(data.attendanceStats.ON_LEAVE) > 0 && (
+                        <div
+                          style={{ width: `${getPercentage(data.attendanceStats.ON_LEAVE)}%` }}
+                          className="h-full bg-purple-500 rounded-r-full transition-all duration-300"
+                          title={`On Leave: ${getPercentage(data.attendanceStats.ON_LEAVE)}%`}
+                        />
+                      )}
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Individual breakdown rows */}
+                  <div className="space-y-3 pt-1">
+                    {([
+                      ["PRESENT", "bg-emerald-500", getPercentage(data.attendanceStats.PRESENT)],
+                      ["LATE", "bg-amber-400", getPercentage(data.attendanceStats.LATE)],
+                      ["ABSENT", "bg-rose-500", getPercentage(data.attendanceStats.ABSENT)],
+                      ["ON LEAVE", "bg-purple-500", getPercentage(data.attendanceStats.ON_LEAVE)]
+                    ] as const).map(([label, color, val]) => (
+                      <div key={label}>
+                        <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
+                          <span className="flex items-center gap-1.5 text-text-secondary">
+                            <span className={`w-2 h-2 rounded-full ${color}`} />
+                            {label}
+                          </span>
+                          <span className="text-text-primary font-black">{val}%</span>
+                        </div>
+                        <ProgressBar value={val} color={color} />
+                      </div>
+                    ))}
+                  </div>
                 </CardBody>
               </Card>
 
               <Card>
                 <CardHeader>
                   <h3 className="font-bold text-text-primary text-sm">Leave Approvals</h3>
-                  <span className="text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">{approvalRate === null ? "No decisions yet" : `${approvalRate}% Approved`}</span>
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+                    {approvalRate === null ? "No decisions yet" : `${approvalRate}% Approved`}
+                  </span>
                 </CardHeader>
                 <CardBody className="space-y-3">
                   <div className="grid grid-cols-2 gap-3 text-center">
-                    <div className="p-2 bg-success/5 border border-success/10 rounded-lg">
-                      <p className="text-xs font-bold text-success">{leaveCounts.APPROVED}</p>
-                      <p className="text-[10px] text-text-muted font-semibold">APPROVED</p>
+                    <div className="p-2.5 bg-emerald-50/60 border border-emerald-100 rounded-xl">
+                      <p className="text-sm font-black text-emerald-700">{leaveCounts.APPROVED}</p>
+                      <p className="text-[10px] text-emerald-600/80 font-bold tracking-wider">APPROVED</p>
                     </div>
-                    <div className="p-2 bg-danger/5 border border-danger/10 rounded-lg">
-                      <p className="text-xs font-bold text-danger">{leaveCounts.REJECTED}</p>
-                      <p className="text-[10px] text-text-muted font-semibold">REJECTED</p>
+                    <div className="p-2.5 bg-rose-50/60 border border-rose-100 rounded-xl">
+                      <p className="text-sm font-black text-rose-700">{leaveCounts.REJECTED}</p>
+                      <p className="text-[10px] text-rose-600/80 font-bold tracking-wider">REJECTED</p>
                     </div>
                   </div>
+                  {leaveCounts.PENDING > 0 && (
+                    <div className="flex items-center justify-between p-2.5 bg-amber-50/60 border border-amber-200/60 rounded-xl">
+                      <span className="text-xs font-bold text-amber-800">{leaveCounts.PENDING} pending approval</span>
+                      <a href="/leave-requests" className="text-xs font-bold text-brand hover:underline">
+                        Review →
+                      </a>
+                    </div>
+                  )}
                   <p className="text-xs text-text-muted">{leaveCounts.APPROVED} approved out of {approvalTotal} reviewed requests. {leaveCounts.PENDING} pending requests excluded.</p>
                 </CardBody>
               </Card>
@@ -1354,19 +1491,28 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell title="Dashboard" breadcrumb={[{ label: "Dashboard" }]}>
-      <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-text-primary">
             Good {greeting}, {user?.name?.split(" ")[0]} 👋
           </h2>
-          <p className="text-xs text-text-muted font-semibold mt-0.5 uppercase tracking-wider">
-            {greetingRole} view · {dateStr}
-          </p>
+          <div className="flex items-center gap-2.5 mt-1 flex-wrap">
+            <p className="text-xs text-text-muted font-semibold uppercase tracking-wider">
+              {greetingRole} view · {dateStr}
+            </p>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              Ecosystem Active
+            </span>
+          </div>
         </div>
         <button
           onClick={loadStats}
           title="Refresh Stats"
-          className="p-2 text-text-muted hover:text-brand hover:bg-brand/10 rounded-lg transition-colors mt-0.5"
+          className="p-2 text-text-muted hover:text-brand hover:bg-brand/10 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
         >
           <RefreshCw className="h-4 w-4" />
         </button>
