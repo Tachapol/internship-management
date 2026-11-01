@@ -26,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { InvitationsService } from '../invitations/invitations.service';
 import { StorageService } from '../storage/storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -160,22 +161,12 @@ export class UsersController {
     summary: 'Update user',
     description: 'Update user profile details (name, phone) or administrative assignments (status, role, company, mentor).',
   })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', example: 'Ethan Hunt (Senior Intern)' },
-        phone: { type: 'string', example: '+66 81 234 5678' },
-        status: { type: 'string', enum: ['ACTIVE', 'INACTIVE'], example: 'ACTIVE' },
-      },
-    },
-  })
   @ApiResponse({ status: 200, description: 'User updated successfully.' })
   @ApiResponse({ status: 403, description: 'Forbidden: Insufficient permissions to modify this user.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: any,
+    @Body() body: UpdateUserDto,
     @GetUser() currentUser: { id: string; role: UserRole },
   ) {
     const user = await this.usersService.findById(id);
