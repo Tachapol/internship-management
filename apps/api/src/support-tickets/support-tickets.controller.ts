@@ -116,10 +116,10 @@ export class SupportTicketsController {
   }
 
   @Patch(':id/assign')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM, UserRole.MENTOR)
   @ApiOperation({
     summary: 'Assign ticket to staff member',
-    description: 'Assigns or reassigns an issue ticket to a specific staff member (BD / Admin only).',
+    description: 'Assigns or reassigns an issue ticket (BD/Admin can assign anyone; Mentor can assign only themselves).',
   })
   @ApiResponse({ status: 200, description: 'Ticket assigned.' })
   async assign(

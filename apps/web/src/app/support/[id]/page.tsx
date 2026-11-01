@@ -134,7 +134,8 @@ function TicketDetailContent() {
   const [staffUsers, setStaffUsers] = React.useState<User[]>([]);
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const isStaff = STAFF_ROLES.includes(user?.role ?? "");
-  const canAssign = user?.role === "SUPER_ADMIN" || user?.role === "BD_TEAM";
+  const isSuperAdminOrBd = user?.role === "SUPER_ADMIN" || user?.role === "BD_TEAM";
+  const isMentor = user?.role === "MENTOR";
 
   const loadTicket = React.useCallback(() => {
     if (!id) return;
@@ -154,18 +155,18 @@ function TicketDetailContent() {
   }, [loadTicket]);
 
   React.useEffect(() => {
-    if (canAssign) {
+    if (isSuperAdminOrBd) {
       usersApi.list({ limit: 100 }).then((res) => {
-        // Only BD_TEAM and SUPER_ADMIN can be assigned to support tickets; exclude ticket author
+        // BD_TEAM and SUPER_ADMIN can assign tickets to any staff member (SUPER_ADMIN, BD_TEAM, MENTOR)
         const assignable = res.data.filter(
           (u) =>
-            (u.role === "SUPER_ADMIN" || u.role === "BD_TEAM") &&
+            (u.role === "SUPER_ADMIN" || u.role === "BD_TEAM" || u.role === "MENTOR") &&
             (!ticket || u.id !== ticket.author.id)
         );
         setStaffUsers(assignable);
       }).catch(console.error);
     }
-  }, [canAssign, ticket?.author?.id]);
+  }, [isSuperAdminOrBd, ticket?.author?.id]);
 
   React.useEffect(() => {
     if (!loading) {
@@ -393,7 +394,7 @@ function TicketDetailContent() {
 
               <div className="border-t border-borderGray pt-1.5">
                 <p className="text-text-muted font-medium mb-0.5">Assigned to</p>
-                {canAssign ? (
+                {isSuperAdminOrBd ? (
                   <div className="space-y-1.5 mt-1">
                     <select
                       value={ticket.assignedTo?.id || ""}
@@ -413,9 +414,39 @@ function TicketDetailContent() {
                       <button
                         id="btn-assign-self"
                         onClick={() => handleAssign()}
-                        className="text-[11.5px] font-bold text-brand hover:underline block ml-1"
+                        className="text-[11.5px] font-bold text-brand hover:underline block ml-1 cursor-pointer"
                       >
                         Assign to me
+                      </button>
+                    )}
+                  </div>
+                ) : isMentor ? (
+                  <div className="space-y-2 mt-1">
+                    <p className="font-semibold text-text-primary">
+                      {ticket.assignedTo
+                        ? ticket.assignedTo.id === user?.id
+                          ? `${ticket.assignedTo.name} (You)`
+                          : ticket.assignedTo.name
+                        : "Unassigned"}
+                    </p>
+                    {/* Mentor can assign only themself */}
+                    {ticket.assignedTo?.id !== user?.id && user?.id !== ticket.author.id && (
+                      <button
+                        id="btn-mentor-assign-self"
+                        onClick={() => handleAssign(user?.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg text-xs font-bold hover:bg-brand-hover transition-colors shadow-sm cursor-pointer"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Assign to me
+                      </button>
+                    )}
+                    {ticket.assignedTo?.id === user?.id && (
+                      <button
+                        id="btn-mentor-unassign"
+                        onClick={() => handleAssign("")}
+                        className="text-[11px] font-semibold text-text-muted hover:text-danger hover:underline block cursor-pointer"
+                      >
+                        Unassign myself
                       </button>
                     )}
                   </div>

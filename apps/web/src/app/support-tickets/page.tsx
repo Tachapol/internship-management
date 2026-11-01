@@ -9,10 +9,11 @@ import { useAuth } from "../../lib/auth-context";
 import {
   LifeBuoy, ChevronRight, Clock, CheckCircle2, AlertCircle,
   X, Search, RefreshCw, Filter, Tag, MessageSquare,
-  Users, ShieldAlert, UserCheck,
+  Users, ShieldAlert, UserCheck, Plus,
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Card, CardHeader, CardBody, PageHeader, EmptyState } from "../../components/ui/shared";
+import { CreateTicketModal } from "../../components/support/create-ticket-modal";
 
 // ─── Constants ────────────────────────────────────────────────
 const STAFF_ROLES = ["SUPER_ADMIN", "BD_TEAM", "MENTOR"];
@@ -120,6 +121,7 @@ function SupportTicketsAdminContent() {
   const [tickets, setTickets] = React.useState<SupportTicket[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [showCreate, setShowCreate] = React.useState(false);
   const [search, setSearch] = React.useState(searchParams.get('q') ?? '');
   const [filterStatus, setFilterStatus] = React.useState(searchParams.get('status') ?? 'ALL');
   const [filterPriority, setFilterPriority] = React.useState(searchParams.get('priority') ?? 'ALL');
@@ -186,13 +188,23 @@ function SupportTicketsAdminContent() {
         title="Support Ticket Management"
         description="Review, respond to, and resolve user support requests."
         action={
-          <button
-            onClick={loadTickets}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-borderGray text-sm font-semibold text-text-muted hover:text-brand hover:border-brand/40 transition-colors"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadTickets}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-borderGray text-sm font-semibold text-text-muted hover:text-brand hover:border-brand/40 transition-colors cursor-pointer"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+            <button
+              id="btn-new-ticket"
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand text-white text-sm font-bold hover:bg-brand-hover transition-colors shadow-sm cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              New Ticket
+            </button>
+          </div>
         }
       />
 
@@ -308,6 +320,16 @@ function SupportTicketsAdminContent() {
           </div>
         )}
       </Card>
+
+      {showCreate && (
+        <CreateTicketModal
+          onClose={() => setShowCreate(false)}
+          onCreated={(newTicket) => {
+            setShowCreate(false);
+            setTickets((prev) => [newTicket, ...prev]);
+          }}
+        />
+      )}
     </DashboardShell>
   );
 }

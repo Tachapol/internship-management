@@ -303,8 +303,8 @@ export class SupportTicketsService {
     user: { id: string; role: UserRole },
     assignedToId?: string,
   ) {
-    if (user.role !== UserRole.SUPER_ADMIN && user.role !== UserRole.BD_TEAM) {
-      throw new ForbiddenException('Only BD team members or Admins can assign tickets');
+    if (!isStaffRole(user.role)) {
+      throw new ForbiddenException('Only staff members can assign tickets');
     }
 
     const ticket = await this.prisma.supportTicket.findUnique({ where: { id } });
@@ -314,44 +314,83 @@ export class SupportTicketsService {
 
     let targetAssigneeId: string | null = null;
 
-    if (assignedToId) {
-      if (assignedToId === '' || assignedToId === 'unassigned') {
-        targetAssigneeId = null;
+    if (user.role === UserRole.MENTOR) {
+      // Mentor can assign only themself
+      if (assignedToId && assignedToId !== user.id) {
+        if (assignedToId === '' || assignedToId === 'unassigned') {
+          // Unassign: allowed only if currently assigned to this mentor
+          if (ticket.assignedToId !== user.id) {
+            throw new ForbiddenException('Mentors can only unassign tickets assigned to themselves');
+          }
+          targetAssigneeId = null;
+        } else {
+          throw new ForbiddenException('Mentors can only assign tickets to themselves');
+        }
       } else {
-        const assignee = await this.prisma.user.findUnique({
-          where: { id: assignedToId, deletedAt: null },
-        });
-
-        if (!assignee) {
-          throw new NotFoundException('Assignee user not found');
+        // Self-assignment
+        if (user.id === ticket.authorId) {
+          throw new BadRequestException('Cannot assign ticket to yourself as the ticket author');
         }
-
-        // Validate: Cannot assign to ticket author (e.g. mentor who submitted it)
-        if (assignee.id === ticket.authorId) {
-          throw new BadRequestException('Cannot assign ticket to the author who submitted it');
-        }
-
-        // Validate: Assignee must be BD_TEAM or SUPER_ADMIN
-        if (assignee.role !== UserRole.BD_TEAM && assignee.role !== UserRole.SUPER_ADMIN) {
-          throw new BadRequestException('Tickets can only be assigned to BD Team or Admin members');
-        }
-
-        targetAssigneeId = assignee.id;
+        targetAssigneeId = user.id;
       }
-    } else if (assignedToId === undefined) {
-      // "Assign to me" (self-assignment)
-      if (user.id === ticket.authorId) {
-        throw new BadRequestException('Cannot assign ticket to yourself as the ticket author');
+    } else {
+      // SUPER_ADMIN and BD_TEAM can assign to anyone (SUPER_ADMIN, BD_TEAM, MENTOR) or unassign
+      if (assignedToId) {
+        if (assignedToId === '' || assignedToId === 'unassigned') {
+          targetAssigneeId = null;
+        } else {
+          const assignee = await this.prisma.user.findUnique({
+            where: { id: assignedToId, deletedAt: null },
+          });
+
+          if (!assignee) {
+            throw new NotFoundException('Assignee user not found');
+          }
+
+          // Validate: Cannot assign to ticket author
+          if (assignee.id === ticket.authorId) {
+            throw new BadRequestException('Cannot assign ticket to the author who submitted it');
+          }
+
+          // Validate: Assignee must be staff (SUPER_ADMIN, BD_TEAM, or MENTOR)
+          if (!isStaffRole(assignee.role)) {
+            throw new BadRequestException('Tickets can only be assigned to staff members (Admin, BD Team, or Mentor)');
+          }
+
+          targetAssigneeId = assignee.id;
+        }
+      } else if (assignedToId === undefined) {
+        // "Assign to me" (self-assignment)
+        if (user.id === ticket.authorId) {
+          throw new BadRequestException('Cannot assign ticket to yourself as the ticket author');
+        }
+        targetAssigneeId = user.id;
       }
-      targetAssigneeId = user.id;
     }
 
-    return this.prisma.supportTicket.update({
+    const updated = await this.prisma.supportTicket.update({
       where: { id },
       data: { assignedToId: targetAssigneeId },
       include: {
         assignedTo: { select: { id: true, name: true, role: true } },
       },
     });
+
+    // Notify assignee if newly assigned to someone else
+    if (targetAssigneeId && targetAssigneeId !== user.id) {
+      try {
+        await this.notificationsService.createNotification(
+          targetAssigneeId,
+          `🎫 Support Ticket Assigned: ${ticket.subject}`,
+          `You have been assigned to support ticket "${ticket.subject}".`,
+          NotificationType.INFO,
+          { ticketId: ticket.id },
+        );
+      } catch (err) {
+        console.error('Failed to notify ticket assignee:', err);
+      }
+    }
+
+    return updated;
   }
 }
