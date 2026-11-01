@@ -100,10 +100,10 @@ export class LeaveRequestsController {
   }
 
   @Patch(':id/approve')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM, UserRole.MENTOR)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MENTOR)
   @ApiOperation({
     summary: 'Approve leave request',
-    description: 'Approves a pending leave request and notifies the student (Admin, BD, or Mentor).',
+    description: 'Approves a pending leave request and notifies the student (Admin or Mentor only. BD Team is read-only).',
   })
   @ApiResponse({ status: 200, description: 'Leave request approved.' })
   async approve(
@@ -115,10 +115,10 @@ export class LeaveRequestsController {
   }
 
   @Patch(':id/reject')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM, UserRole.MENTOR)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MENTOR)
   @ApiOperation({
     summary: 'Reject leave request',
-    description: 'Rejects a pending leave request with a mandatory reason note.',
+    description: 'Rejects a pending leave request with a mandatory reason note (Admin or Mentor only. BD Team is read-only).',
   })
   @ApiResponse({ status: 200, description: 'Leave request rejected.' })
   async reject(

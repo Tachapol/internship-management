@@ -656,7 +656,7 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
                     <div className="flex items-center justify-between p-2.5 bg-amber-50/60 border border-amber-200/60 rounded-xl">
                       <span className="text-xs font-bold text-amber-800">{leaveCounts.PENDING} pending approval</span>
                       <a href="/leave-requests" className="text-xs font-bold text-brand hover:underline">
-                        Review →
+                        View →
                       </a>
                     </div>
                   )}

@@ -204,7 +204,8 @@ function SubmitLeaveModal({ onClose, onDone }: { onClose: () => void; onDone: ()
 export default function LeaveRequestsPage() {
   const { user } = useAuth();
   const isStudent = user?.role === "STUDENT";
-  const canApprove = user?.role !== "STUDENT";
+  const isBD = user?.role === "BD_TEAM";
+  const canApprove = user?.role === "MENTOR" || user?.role === "SUPER_ADMIN";
 
   const [requests, setRequests] = React.useState<LeaveRequest[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -248,7 +249,13 @@ export default function LeaveRequestsPage() {
 
       <PageHeader
         title="Leave Requests"
-        description={isStudent ? "Submit and track your leave requests" : "Review and manage intern leave requests"}
+        description={
+          isStudent
+            ? "Submit and track your leave requests"
+            : isBD
+            ? "Company leave requests overview (Read-only view)"
+            : "Review and manage intern leave requests"
+        }
         action={isStudent && (
           <button
             onClick={() => setShowSubmitModal(true)}
