@@ -157,6 +157,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateUserDto })
   @ApiOperation({
     summary: 'Update user',
     description: 'Update user profile details (name, phone) or administrative assignments (status, role, company, mentor).',
