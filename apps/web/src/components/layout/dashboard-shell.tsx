@@ -401,7 +401,10 @@ function Header({
               {user?.name}
             </span>
             {user?.company?.name && (
-              <span className="text-[10px] font-medium text-brand block truncate max-w-[140px] leading-tight flex items-center gap-0.5 mt-0.5">
+              <span
+                className="text-[10px] font-medium text-brand leading-tight flex items-center gap-1 mt-0.5 max-w-[280px] truncate"
+                title={user.company.name}
+              >
                 <Building2 className="h-2.5 w-2.5 shrink-0" />
                 <span className="truncate">{user.company.name}</span>
               </span>

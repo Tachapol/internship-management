@@ -577,42 +577,8 @@ function BdTeamDashboard({ data }: { data: BdTeamStats }) {
                   </div>
                 </CardHeader>
                 <CardBody className="space-y-4">
-                  {/* Single Continuous Segmented Stacked Bar */}
-                  <div className="space-y-2">
-                    <div className="h-2.5 w-full rounded-full bg-bgInput p-0.5 border border-borderGray flex overflow-hidden gap-0.5">
-                      {getPercentage(data.attendanceStats.PRESENT) > 0 && (
-                        <div
-                          style={{ width: `${getPercentage(data.attendanceStats.PRESENT)}%` }}
-                          className="h-full bg-emerald-500 rounded-l-full transition-all duration-300"
-                          title={`Present: ${getPercentage(data.attendanceStats.PRESENT)}%`}
-                        />
-                      )}
-                      {getPercentage(data.attendanceStats.LATE) > 0 && (
-                        <div
-                          style={{ width: `${getPercentage(data.attendanceStats.LATE)}%` }}
-                          className="h-full bg-amber-400 transition-all duration-300"
-                          title={`Late: ${getPercentage(data.attendanceStats.LATE)}%`}
-                        />
-                      )}
-                      {getPercentage(data.attendanceStats.ABSENT) > 0 && (
-                        <div
-                          style={{ width: `${getPercentage(data.attendanceStats.ABSENT)}%` }}
-                          className="h-full bg-rose-500 transition-all duration-300"
-                          title={`Absent: ${getPercentage(data.attendanceStats.ABSENT)}%`}
-                        />
-                      )}
-                      {getPercentage(data.attendanceStats.ON_LEAVE) > 0 && (
-                        <div
-                          style={{ width: `${getPercentage(data.attendanceStats.ON_LEAVE)}%` }}
-                          className="h-full bg-purple-500 rounded-r-full transition-all duration-300"
-                          title={`On Leave: ${getPercentage(data.attendanceStats.ON_LEAVE)}%`}
-                        />
-                      )}
-                    </div>
-                  </div>
-
                   {/* Individual breakdown rows */}
-                  <div className="space-y-3 pt-1">
+                  <div className="space-y-3">
                     {([
                       ["PRESENT", "bg-emerald-500", getPercentage(data.attendanceStats.PRESENT)],
                       ["LATE", "bg-amber-400", getPercentage(data.attendanceStats.LATE)],
