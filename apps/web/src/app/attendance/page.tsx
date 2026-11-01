@@ -8,7 +8,7 @@ import { attendanceApi } from "../../lib/api";
 import type { Attendance, AttendanceStatus } from "../../lib/types";
 import { PageHeader, StatusBadge, ErrorState, EmptyState, Card, CardHeader, CardBody, KpiCard } from "../../components/ui/shared";
 import { useAuth } from "../../lib/auth-context";
-import { CalendarCheck, Clock, CheckCircle, XCircle, AlertCircle, Loader2, MapPin, FileText } from "lucide-react";
+import { CalendarCheck, Clock, CheckCircle, XCircle, AlertCircle, Loader2, MapPin, FileText, Check, X, Edit3 } from "lucide-react";
 import { formatDate } from "../../lib/utils";
 import { cn } from "../../lib/utils";
 
@@ -19,9 +19,147 @@ const STATUS_CONFIG: Record<AttendanceStatus, { icon: React.ElementType; color: 
   ON_LEAVE: { icon: Clock,        color: "text-violet-600",  bg: "bg-violet-50",   border: "border-violet-100" },
 };
 
+function ReviewAttendanceModal({
+  record,
+  onClose,
+  onDone,
+}: {
+  record: Attendance;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [status, setStatus] = React.useState<AttendanceStatus>(record.status);
+  const [note, setNote] = React.useState(record.note || "");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+
+  async function submit() {
+    setLoading(true);
+    setError("");
+    try {
+      await attendanceApi.update(record.id, { status, note: note.trim() || undefined });
+      onDone();
+      onClose();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to update attendance");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-text-primary text-base">Review Attendance Record</h3>
+            <p className="text-xs text-text-muted mt-0.5">
+              {record.user?.name ?? "Student"} · {formatDate(record.date)}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg text-text-muted hover:text-text-primary hover:bg-bgInput flex items-center justify-center transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="bg-bgPage/60 rounded-xl p-3.5 space-y-2 text-xs border border-borderGray">
+          <div className="flex justify-between">
+            <span className="text-text-muted">Check-In</span>
+            <span className="font-semibold text-text-primary">
+              {record.checkIn ? new Date(record.checkIn).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—"}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-text-muted">Check-Out</span>
+            <span className="font-semibold text-text-primary">
+              {record.checkOut ? new Date(record.checkOut).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—"}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-text-muted">Current Status</span>
+            <StatusBadge status={record.status} />
+          </div>
+        </div>
+
+        {error && <div className="text-xs text-danger font-medium">{error}</div>}
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-bold text-text-primary block mb-1.5 uppercase tracking-wider">
+              Attendance Decision / Status
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["PRESENT", "LATE", "ABSENT", "ON_LEAVE"] as AttendanceStatus[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatus(s)}
+                  className={cn(
+                    "h-9 px-3 text-xs font-semibold rounded-lg border transition-all text-center",
+                    status === s
+                      ? s === "PRESENT"
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                        : s === "ABSENT"
+                        ? "bg-rose-600 text-white border-rose-600 shadow-sm"
+                        : s === "LATE"
+                        ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                        : "bg-violet-600 text-white border-violet-600 shadow-sm"
+                      : "bg-white border-borderGray text-text-secondary hover:border-brand/40"
+                  )}
+                >
+                  {s === "PRESENT" && "✓ Approve (Present)"}
+                  {s === "ABSENT" && "✕ Reject (Absent)"}
+                  {s === "LATE" && "⏱ Mark Late"}
+                  {s === "ON_LEAVE" && "📅 On Leave"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-text-primary block mb-1.5 uppercase tracking-wider">
+              Mentor Note / Reason (Optional)
+            </label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              placeholder="Add verification or adjustment note..."
+              className="w-full text-xs p-3 bg-bgInput/50 border border-borderGray rounded-xl text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none transition-all"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 h-9 rounded-xl border border-borderGray text-xs font-semibold text-text-muted hover:bg-bgInput transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={loading}
+            className="flex-1 h-9 rounded-xl bg-brand hover:bg-brand-hover text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AttendancePageContent() {
   const { user } = useAuth();
   const isStudent = user?.role === "STUDENT";
+  const isBD = user?.role === "BD_TEAM";
+  const canReview = user?.role === "MENTOR" || user?.role === "SUPER_ADMIN";
   const searchParams = useSearchParams();
   const studentId = searchParams.get("studentId") || undefined;
 
@@ -33,6 +171,8 @@ function AttendancePageContent() {
   const [records, setRecords] = React.useState<Attendance[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState(false);
+  const [actionRowId, setActionRowId] = React.useState<string | null>(null);
+  const [reviewTarget, setReviewTarget] = React.useState<Attendance | null>(null);
   const [error, setError] = React.useState("");
   const [page, setPage] = React.useState(1);
   const [meta, setMeta] = React.useState({ total: 0, totalPages: 1 });
@@ -101,11 +241,45 @@ function AttendancePageContent() {
     }
   }
 
+  async function handleQuickApprove(id: string) {
+    setActionRowId(id);
+    try {
+      await attendanceApi.approve(id);
+      load();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to approve attendance");
+    } finally {
+      setActionRowId(null);
+    }
+  }
+
+  async function handleQuickReject(id: string) {
+    if (!confirm("Are you sure you want to reject this attendance record and mark it ABSENT?")) return;
+    setActionRowId(id);
+    try {
+      await attendanceApi.reject(id, "Rejected by Mentor");
+      load();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to reject attendance");
+    } finally {
+      setActionRowId(null);
+    }
+  }
+
   const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   return (
     <DashboardShell title="Attendance" breadcrumb={[{ label: "Attendance" }]}>
-      <PageHeader title="Attendance" description={isStudent ? "Check in/out and view your attendance records" : "Monitor and view student attendance logs"} />
+      <PageHeader
+        title="Attendance"
+        description={
+          isStudent
+            ? "Check in/out and view your attendance records"
+            : isBD
+            ? "Company attendance overview (Read-only view)"
+            : "Monitor, review, and approve or reject student attendance records"
+        }
+      />
 
       {/* Student Check-In/Out Panel */}
       {isStudent && todayStatus && (
@@ -246,7 +420,8 @@ function AttendancePageContent() {
                   <th className="px-5 py-3">Check-Out</th>
                   <th className="px-5 py-3">Hours</th>
                   <th className="px-5 py-3">Details / Location</th>
-                  <th className="px-5 py-3 text-right">Status</th>
+                  <th className={cn("px-5 py-3", canReview ? "text-center" : "text-right")}>Status</th>
+                  {canReview && <th className="px-5 py-3 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-borderGray/65">
@@ -259,12 +434,13 @@ function AttendancePageContent() {
                       <td className="px-5 py-4"><div className="h-4 w-14 bg-bgInput rounded" /></td>
                       <td className="px-5 py-4"><div className="h-4 w-10 bg-bgInput rounded" /></td>
                       <td className="px-5 py-4"><div className="h-4 w-40 bg-bgInput rounded" /></td>
-                      <td className="px-5 py-4 text-right"><div className="h-5 w-16 bg-bgInput rounded-full ml-auto" /></td>
+                      <td className={cn("px-5 py-4", canReview ? "text-center" : "text-right")}><div className={cn("h-5 w-16 bg-bgInput rounded-full", canReview ? "mx-auto" : "ml-auto")} /></td>
+                      {canReview && <td className="px-5 py-4 text-right"><div className="h-7 w-20 bg-bgInput rounded-lg ml-auto" /></td>}
                     </tr>
                   ))
                 ) : records.length === 0 ? (
                   <tr>
-                    <td colSpan={isStudent ? 6 : 7} className="py-12">
+                    <td colSpan={isStudent ? 6 : canReview ? 8 : 7} className="py-12">
                       <EmptyState icon={CalendarCheck} title="No records" description="No attendance logs registered for this month." />
                     </td>
                   </tr>
@@ -347,9 +523,46 @@ function AttendancePageContent() {
                         </td>
 
                         {/* Status Badge */}
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                        <td className={cn("px-5 py-3.5 whitespace-nowrap", canReview ? "text-center" : "text-right")}>
                           <StatusBadge status={r.status} />
                         </td>
+
+                        {/* Actions for Mentor / Admin (BD Team is view-only) */}
+                        {canReview && (
+                          <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {r.status !== "PRESENT" && (
+                                <button
+                                  onClick={() => handleQuickApprove(r.id)}
+                                  disabled={actionRowId === r.id}
+                                  title="Approve (Mark Present)"
+                                  className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg transition-colors shadow-2xs disabled:opacity-50"
+                                >
+                                  {actionRowId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                                  Approve
+                                </button>
+                              )}
+                              {r.status !== "ABSENT" && (
+                                <button
+                                  onClick={() => handleQuickReject(r.id)}
+                                  disabled={actionRowId === r.id}
+                                  title="Reject (Mark Absent)"
+                                  className="inline-flex items-center gap-1 h-7 px-2 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 rounded-lg transition-colors shadow-2xs disabled:opacity-50"
+                                >
+                                  {actionRowId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                                  Reject
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setReviewTarget(r)}
+                                title="Review / Override Details"
+                                className="inline-flex items-center justify-center h-7 w-7 text-xs font-semibold text-text-muted hover:text-text-primary bg-bgInput/60 hover:bg-bgInput border border-borderGray rounded-lg transition-colors"
+                              >
+                                <Edit3 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
 
                       </tr>
                     );
@@ -371,6 +584,14 @@ function AttendancePageContent() {
             </div>
           )}
         </Card>
+      )}
+
+      {reviewTarget && (
+        <ReviewAttendanceModal
+          record={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onDone={load}
+        />
       )}
     </DashboardShell>
   );

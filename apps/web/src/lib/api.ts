@@ -238,6 +238,12 @@ export const attendanceApi = {
     const q = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))).toString();
     return request<import("./types").AttendanceReport>(`/attendance/report?${q}`);
   },
+  update: (id: string, data: { status: import("./types").AttendanceStatus; note?: string }) =>
+    request<import("./types").Attendance>(`/attendance/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  approve: (id: string, note?: string) =>
+    request<import("./types").Attendance>(`/attendance/${id}/approve`, { method: "PATCH", body: JSON.stringify({ note }) }),
+  reject: (id: string, note?: string) =>
+    request<import("./types").Attendance>(`/attendance/${id}/reject`, { method: "PATCH", body: JSON.stringify({ note }) }),
 };
 
 // ─── Leave Requests ───────────────────────────────────────────

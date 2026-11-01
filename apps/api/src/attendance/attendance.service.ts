@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
@@ -312,16 +312,107 @@ export class AttendanceService {
     };
   }
 
-  async overrideAttendance(id: string, status: AttendanceStatus, note?: string) {
-    const record = await this.prisma.attendance.findUnique({ where: { id } });
+  async overrideAttendance(
+    id: string,
+    status: AttendanceStatus,
+    note?: string,
+    currentUser?: { id: string; role: UserRole; companyId?: string },
+  ) {
+    const record = await this.prisma.attendance.findUnique({
+      where: { id },
+      include: { user: true },
+    });
     if (!record) {
       throw new NotFoundException('Attendance record not found');
     }
+
+    if (currentUser?.role === UserRole.MENTOR) {
+      if (record.user.mentorId !== currentUser.id && record.user.companyId !== currentUser.companyId) {
+        throw new ForbiddenException('You can only modify attendance for your assigned students');
+      }
+    }
+
     return this.prisma.attendance.update({
       where: { id },
       data: {
         status,
         note,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+  }
+
+  async approveAttendance(
+    id: string,
+    note?: string,
+    currentUser?: { id: string; role: UserRole; companyId?: string },
+  ) {
+    const record = await this.prisma.attendance.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+    if (!record) {
+      throw new NotFoundException('Attendance record not found');
+    }
+
+    if (currentUser?.role === UserRole.MENTOR) {
+      if (record.user.mentorId !== currentUser.id && record.user.companyId !== currentUser.companyId) {
+        throw new ForbiddenException('You can only approve attendance for your assigned students');
+      }
+    }
+
+    const newStatus = record.status === AttendanceStatus.LATE ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
+    const approvalNote = note ? note : (record.note ? `${record.note} (Approved)` : 'Approved by Mentor');
+
+    return this.prisma.attendance.update({
+      where: { id },
+      data: {
+        status: newStatus,
+        note: approvalNote,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+  }
+
+  async rejectAttendance(
+    id: string,
+    note?: string,
+    currentUser?: { id: string; role: UserRole; companyId?: string },
+  ) {
+    const record = await this.prisma.attendance.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+    if (!record) {
+      throw new NotFoundException('Attendance record not found');
+    }
+
+    if (currentUser?.role === UserRole.MENTOR) {
+      if (record.user.mentorId !== currentUser.id && record.user.companyId !== currentUser.companyId) {
+        throw new ForbiddenException('You can only reject attendance for your assigned students');
+      }
+    }
+
+    const rejectionNote = note ? note : 'Rejected by Mentor';
+
+    return this.prisma.attendance.update({
+      where: { id },
+      data: {
+        status: AttendanceStatus.ABSENT,
+        note: rejectionNote,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
       },
     });
   }

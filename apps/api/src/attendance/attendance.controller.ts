@@ -144,16 +144,47 @@ export class AttendanceController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.BD_TEAM)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MENTOR)
   @ApiOperation({
-    summary: 'Admin override attendance',
-    description: 'Manually adjusts or corrects an attendance status and note (Super Admin / BD Team only).',
+    summary: 'Mentor override attendance',
+    description: 'Manually adjusts or corrects an attendance status and note (Mentor or Super Admin only. BD Team is read-only).',
   })
   @ApiResponse({ status: 200, description: 'Attendance updated successfully.' })
   async override(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { status: AttendanceStatus; note?: string },
+    @GetUser() user: { id: string; role: UserRole; companyId?: string },
   ) {
-    return this.attendanceService.overrideAttendance(id, body.status, body.note);
+    return this.attendanceService.overrideAttendance(id, body.status, body.note, user);
+  }
+
+  @Patch(':id/approve')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MENTOR)
+  @ApiOperation({
+    summary: 'Approve attendance record',
+    description: 'Approves student attendance record (Mentor or Super Admin only).',
+  })
+  @ApiResponse({ status: 200, description: 'Attendance approved successfully.' })
+  async approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { note?: string },
+    @GetUser() user: { id: string; role: UserRole; companyId?: string },
+  ) {
+    return this.attendanceService.approveAttendance(id, body?.note, user);
+  }
+
+  @Patch(':id/reject')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MENTOR)
+  @ApiOperation({
+    summary: 'Reject attendance record',
+    description: 'Rejects student attendance record, setting status to ABSENT (Mentor or Super Admin only).',
+  })
+  @ApiResponse({ status: 200, description: 'Attendance rejected successfully.' })
+  async reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { note?: string },
+    @GetUser() user: { id: string; role: UserRole; companyId?: string },
+  ) {
+    return this.attendanceService.rejectAttendance(id, body?.note, user);
   }
 }

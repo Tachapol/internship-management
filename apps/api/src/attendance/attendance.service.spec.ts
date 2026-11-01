@@ -1,4 +1,6 @@
 import { AttendanceService } from './attendance.service';
+import { UserRole, AttendanceStatus } from 'database';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 describe('Cohort monthly attendance report', () => {
   it('returns no percentage for a month without logs', async () => {
@@ -14,5 +16,105 @@ describe('Cohort monthly attendance report', () => {
     const actor = { id: 'student', role: 'STUDENT' };
     expect((await service.getCohortMonthlyReport(actor, undefined, 2026, 10)).attendanceRate).toBe(50);
     expect((await service.getCohortMonthlyReport(actor, undefined, 2026, 11)).attendanceRate).toBe(0);
+  });
+});
+
+describe('Attendance Mentor Approval and Override', () => {
+  it('allows Mentor to approve attendance for their assigned student', async () => {
+    const prisma = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'att-1',
+          status: AttendanceStatus.ABSENT,
+          note: null,
+          user: { id: 'student-1', mentorId: 'mentor-1', companyId: 'comp-1' },
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: 'att-1',
+          status: AttendanceStatus.PRESENT,
+          note: 'Approved by Mentor',
+        }),
+      },
+    };
+    const service = new AttendanceService(prisma as any);
+    const result = await service.approveAttendance('att-1', undefined, {
+      id: 'mentor-1',
+      role: UserRole.MENTOR,
+      companyId: 'comp-1',
+    });
+
+    expect(result.status).toBe(AttendanceStatus.PRESENT);
+    expect(prisma.attendance.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'att-1' },
+        data: expect.objectContaining({ status: AttendanceStatus.PRESENT, note: 'Approved by Mentor' }),
+      }),
+    );
+  });
+
+  it('allows Mentor to reject attendance for their assigned student', async () => {
+    const prisma = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'att-2',
+          status: AttendanceStatus.PRESENT,
+          user: { id: 'student-1', mentorId: 'mentor-1', companyId: 'comp-1' },
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: 'att-2',
+          status: AttendanceStatus.ABSENT,
+          note: 'Rejected by Mentor',
+        }),
+      },
+    };
+    const service = new AttendanceService(prisma as any);
+    const result = await service.rejectAttendance('att-2', undefined, {
+      id: 'mentor-1',
+      role: UserRole.MENTOR,
+      companyId: 'comp-1',
+    });
+
+    expect(result.status).toBe(AttendanceStatus.ABSENT);
+    expect(prisma.attendance.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'att-2' },
+        data: expect.objectContaining({ status: AttendanceStatus.ABSENT, note: 'Rejected by Mentor' }),
+      }),
+    );
+  });
+
+  it('throws ForbiddenException if Mentor attempts to approve a student from another mentor/company', async () => {
+    const prisma = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'att-3',
+          status: AttendanceStatus.ABSENT,
+          user: { id: 'student-99', mentorId: 'other-mentor', companyId: 'other-comp' },
+        }),
+      },
+    };
+    const service = new AttendanceService(prisma as any);
+    await expect(
+      service.approveAttendance('att-3', undefined, {
+        id: 'mentor-1',
+        role: UserRole.MENTOR,
+        companyId: 'comp-1',
+      }),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('throws NotFoundException if attendance record does not exist', async () => {
+    const prisma = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+    };
+    const service = new AttendanceService(prisma as any);
+    await expect(
+      service.approveAttendance('non-existent', undefined, {
+        id: 'mentor-1',
+        role: UserRole.MENTOR,
+      }),
+    ).rejects.toThrow(NotFoundException);
   });
 });

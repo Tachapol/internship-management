@@ -61,10 +61,8 @@ const FAQ_CATEGORIES: FaqCategory[] = [
         answer: (
           <p>
             If you miss a check-in, your status for that day will be marked as{" "}
-            <strong>ABSENT</strong>. You should contact your mentor or a BD Team
-            member to manually correct the record. Attendance corrections can be
-            made through the <strong>Attendance</strong> management page by
-            authorized staff.
+            <strong>ABSENT</strong>. You should contact your assigned mentor to
+            review, approve, or adjust your attendance record. (BD Team members have view-only access).
           </p>
         ),
       },
