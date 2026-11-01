@@ -157,7 +157,16 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @ApiBody({ type: UpdateUserDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'Ethan Hunt (Senior Intern)', description: 'Full name' },
+        phone: { type: 'string', example: '+66 81 234 5678', description: 'Phone number' },
+        status: { type: 'string', enum: ['ACTIVE', 'INACTIVE'], example: 'ACTIVE', description: 'User account status' },
+      },
+    },
+  })
   @ApiOperation({
     summary: 'Update user',
     description: 'Update user profile details (name, phone) or administrative assignments (status, role, company, mentor).',
