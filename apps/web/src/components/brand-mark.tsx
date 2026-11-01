@@ -5,7 +5,7 @@ import { cn } from "../lib/utils";
 export function BrandMark({ className }: { className?: string }) {
   return (
     <Image
-      src="/branding/devplus-mark.png"
+      src="/branding/devplus-logo.png"
       alt="DevPlus"
       width={64}
       height={64}

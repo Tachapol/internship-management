@@ -1491,28 +1491,19 @@ export default function DashboardPage() {
 
   return (
     <DashboardShell title="Dashboard" breadcrumb={[{ label: "Dashboard" }]}>
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-text-primary">
             Good {greeting}, {user?.name?.split(" ")[0]} 👋
           </h2>
-          <div className="flex items-center gap-2.5 mt-1 flex-wrap">
-            <p className="text-xs text-text-muted font-semibold uppercase tracking-wider">
-              {greetingRole} view · {dateStr}
-            </p>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60 shadow-2xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              Ecosystem Active
-            </span>
-          </div>
+          <p className="text-xs text-text-muted font-semibold mt-0.5 uppercase tracking-wider">
+            {greetingRole} view · {dateStr}
+          </p>
         </div>
         <button
           onClick={loadStats}
           title="Refresh Stats"
-          className="p-2 text-text-muted hover:text-brand hover:bg-brand/10 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
+          className="p-2 text-text-muted hover:text-brand hover:bg-brand/10 rounded-lg transition-colors mt-0.5 cursor-pointer"
         >
           <RefreshCw className="h-4 w-4" />
         </button>
