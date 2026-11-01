@@ -8,6 +8,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
 let app: INestApplication;
+let swaggerDocument: any;
 
 async function getNestApp(): Promise<INestApplication> {
   if (app) {
@@ -37,21 +38,15 @@ async function getNestApp(): Promise<INestApplication> {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   });
 
-  await app.init();
-  return app;
-}
-
-let isSwaggerSetup = false;
-function setupSwagger(nestApp: INestApplication) {
-  if (isSwaggerSetup) return;
+  // Setup Swagger before app.init() so routes are properly mounted in Express
   const config = new DocumentBuilder()
     .setTitle('DevPlus API')
     .setDescription('Internship Management System API Documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(nestApp, config);
-  SwaggerModule.setup('api/docs', nestApp, document, {
+  swaggerDocument = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, swaggerDocument, {
     customCssUrl:
       'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.min.css',
     customJs: [
@@ -59,7 +54,9 @@ function setupSwagger(nestApp: INestApplication) {
       'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-standalone-preset.js',
     ],
   });
-  isSwaggerSetup = true;
+
+  await app.init();
+  return app;
 }
 
 export default async function handler(req: any, res: any) {
@@ -77,10 +74,12 @@ export default async function handler(req: any, res: any) {
 
   const nestApp = await getNestApp();
 
-  // Lazy-load Swagger only when requesting Swagger documentation endpoint
-  const url = req.url || '';
-  if (url.includes('/docs') || url.includes('/api/docs')) {
-    setupSwagger(nestApp);
+  // Directly serve Swagger JSON if requested
+  const url = (req.url || '').split('?')[0];
+  if (url === '/api/docs-json' || url === '/docs-json' || url.endsWith('/docs-json')) {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json(swaggerDocument);
+    return;
   }
 
   nestApp.getHttpAdapter().getInstance().handle(req, res);
