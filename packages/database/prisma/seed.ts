@@ -250,6 +250,35 @@ async function main() {
     },
   });
 
+  // Additional demo student accounts
+  const demoStudents = [
+    { name: "Oliver Bennett", email: "devplus.student.demo01@gmail.com", companyId: devplusCompany.id, teamId: frontendTeam.id, mentorId: mentorDavid.id },
+    { name: "Emma Wilson", email: "devplus.student.demo02@gmail.com", companyId: devplusCompany.id, teamId: frontendTeam.id, mentorId: mentorDavid.id },
+    { name: "Lucas Parker", email: "devplus.student.demo03@gmail.com", companyId: devplusCompany.id, teamId: backendTeam.id, mentorId: mentorElena.id },
+    { name: "Sophia Hayes", email: "devplus.student.demo04@gmail.com", companyId: devplusCompany.id, teamId: backendTeam.id, mentorId: mentorElena.id },
+    { name: "James Carter", email: "devplus.student.demo05@gmail.com", companyId: devplusCompany.id, teamId: frontendTeam.id, mentorId: mentorDavid.id },
+    { name: "Kim Minjun", email: "devplus.student.demo06@gmail.com", companyId: nexustechCompany.id, teamId: mobileTeam.id, mentorId: mentorMarcus.id },
+    { name: "Lee Seoyeon", email: "devplus.student.demo07@gmail.com", companyId: nexustechCompany.id, teamId: mobileTeam.id, mentorId: mentorMarcus.id },
+    { name: "Park Jihoon", email: "devplus.student.demo08@gmail.com", companyId: nexustechCompany.id, teamId: qaTeam.id, mentorId: mentorMarcus.id },
+    { name: "Choi Subin", email: "devplus.student.demo09@gmail.com", companyId: nexustechCompany.id, teamId: qaTeam.id, mentorId: mentorMarcus.id },
+    { name: "Jung Haeun", email: "devplus.student.demo10@gmail.com", companyId: nexustechCompany.id, teamId: mobileTeam.id, mentorId: mentorMarcus.id },
+  ];
+
+  for (const s of demoStudents) {
+    await prisma.user.create({
+      data: {
+        name: s.name,
+        email: s.email,
+        passwordHash,
+        role: UserRole.STUDENT,
+        status: UserStatus.ACTIVE,
+        companyId: s.companyId,
+        teamId: s.teamId,
+        mentorId: s.mentorId,
+      },
+    });
+  }
+
   // ─── 4. INVITATIONS ──────────────────────────────────────────────────────────
   console.log("📩 Creating Invitations...");
 
