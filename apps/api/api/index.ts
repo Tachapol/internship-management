@@ -24,6 +24,12 @@ async function getNestApp(): Promise<INestApplication> {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   }));
 
+  // Route to serve OpenAPI/Swagger JSON directly with full CORS headers
+  expressApp.get(['/api/docs-json', '/docs-json'], (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.json(swaggerDocument);
+  });
+
   app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
     logger: process.env.NODE_ENV === 'production' ? ['error', 'warn'] : ['log', 'error', 'warn'],
   });
@@ -78,14 +84,5 @@ export default async function handler(req: any, res: any) {
   }
 
   const nestApp = await getNestApp();
-
-  // Directly serve Swagger JSON if requested
-  const url = (req.url || '').split('?')[0];
-  if (url === '/api/docs-json' || url === '/docs-json' || url.endsWith('/docs-json')) {
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).json(swaggerDocument);
-    return;
-  }
-
   nestApp.getHttpAdapter().getInstance().handle(req, res);
 }
