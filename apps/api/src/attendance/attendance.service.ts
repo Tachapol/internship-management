@@ -1,11 +1,14 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
-import { Attendance, AttendanceStatus, UserRole } from 'database';
+import { Attendance, AttendanceStatus, UserRole, LeaveStatus } from 'database';
 
 @Injectable()
 export class AttendanceService {
+  private readonly logger = new Logger(AttendanceService.name);
+
   constructor(private prisma: PrismaService) {}
 
   private getTodayDate(): Date {
@@ -415,5 +418,108 @@ export class AttendanceService {
         },
       },
     });
+  }
+
+  /**
+   * Automated cron running Monday through Friday at 18:00 (Asia/Bangkok time)
+   * Evaluates all active students who haven't checked in for today and marks them as ABSENT
+   * (or ON_LEAVE if they have an active approved leave request).
+   */
+  @Cron('0 18 * * 1-5', { timeZone: 'Asia/Bangkok' })
+  async handleDailyAbsentCron() {
+    this.logger.log('Running automated daily attendance cutoff cron (18:00 Mon-Fri)...');
+    try {
+      const result = await this.processDailyAbsent();
+      this.logger.log(`Daily absent cutoff finished: ${JSON.stringify(result)}`);
+    } catch (err) {
+      this.logger.error('Failed to run daily absent cutoff cron', err);
+    }
+  }
+
+  /**
+   * Processes the daily attendance cutoff for a given date (defaults to today).
+   * For every active student without an attendance record:
+   * - If an approved leave request covers the date: creates an ON_LEAVE record.
+   * - Otherwise: creates an ABSENT record.
+   */
+  async processDailyAbsent(targetDateInput?: Date | string): Promise<{
+    date: string;
+    totalActiveStudents: number;
+    absentCreated: number;
+    onLeaveCreated: number;
+    alreadyRecorded: number;
+  }> {
+    const targetDate = targetDateInput ? new Date(targetDateInput) : this.getTodayDate();
+    targetDate.setHours(0, 0, 0, 0);
+    const dateStr = targetDate.toISOString().split('T')[0];
+
+    const activeStudents = await this.prisma.user.findMany({
+      where: {
+        role: UserRole.STUDENT,
+        status: 'ACTIVE',
+        deletedAt: null,
+      },
+      select: { id: true, name: true, email: true },
+    });
+
+    let absentCreated = 0;
+    let onLeaveCreated = 0;
+    let alreadyRecorded = 0;
+
+    for (const student of activeStudents) {
+      const existing = await this.prisma.attendance.findUnique({
+        where: {
+          userId_date: {
+            userId: student.id,
+            date: targetDate,
+          },
+        },
+      });
+
+      if (existing) {
+        alreadyRecorded++;
+        continue;
+      }
+
+      // Check if student has an active approved leave on this date
+      const activeLeave = await this.prisma.leaveRequest.findFirst({
+        where: {
+          studentId: student.id,
+          status: LeaveStatus.APPROVED,
+          startDate: { lte: targetDate },
+          endDate: { gte: targetDate },
+        },
+      });
+
+      if (activeLeave) {
+        await this.prisma.attendance.create({
+          data: {
+            userId: student.id,
+            date: targetDate,
+            status: AttendanceStatus.ON_LEAVE,
+            note: `On approved leave (${activeLeave.type.toLowerCase()})`,
+          },
+        });
+        onLeaveCreated++;
+      } else {
+        await this.prisma.attendance.create({
+          data: {
+            userId: student.id,
+            date: targetDate,
+            status: AttendanceStatus.ABSENT,
+            note: 'Automatically marked absent (No check-in recorded by end of day)',
+          },
+        });
+        absentCreated++;
+      }
+    }
+
+    return {
+      date: dateStr,
+      totalActiveStudents: activeStudents.length,
+      absentCreated,
+      onLeaveCreated,
+      alreadyRecorded,
+    };
   }
 }

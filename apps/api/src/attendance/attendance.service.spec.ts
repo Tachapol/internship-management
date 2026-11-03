@@ -118,3 +118,67 @@ describe('Attendance Mentor Approval and Override', () => {
     ).rejects.toThrow(NotFoundException);
   });
 });
+
+describe('Automated Daily Absent Cutoff (Cron Job)', () => {
+  it('marks active students without attendance as ABSENT (or ON_LEAVE if on approved leave)', async () => {
+    const mockStudents = [
+      { id: 's1', name: 'Alice', email: 'alice@test.com' },
+      { id: 's2', name: 'Bob', email: 'bob@test.com' },
+      { id: 's3', name: 'Charlie', email: 'charlie@test.com' },
+    ];
+
+    const prisma = {
+      user: {
+        findMany: jest.fn().mockResolvedValue(mockStudents),
+      },
+      attendance: {
+        findUnique: jest.fn().mockImplementation(({ where }) => {
+          // s1 already has an attendance record
+          if (where.userId_date.userId === 's1') {
+            return Promise.resolve({ id: 'att-s1', status: AttendanceStatus.PRESENT });
+          }
+          return Promise.resolve(null);
+        }),
+        create: jest.fn().mockResolvedValue({ id: 'new-att' }),
+      },
+      leaveRequest: {
+        findFirst: jest.fn().mockImplementation(({ where }) => {
+          // s2 has approved leave
+          if (where.studentId === 's2') {
+            return Promise.resolve({ id: 'leave-s2', type: 'SICK' });
+          }
+          return Promise.resolve(null);
+        }),
+      },
+    };
+
+    const service = new AttendanceService(prisma as any);
+    const result = await service.processDailyAbsent('2026-11-03');
+
+    expect(result.totalActiveStudents).toBe(3);
+    expect(result.alreadyRecorded).toBe(1); // s1
+    expect(result.onLeaveCreated).toBe(1);  // s2
+    expect(result.absentCreated).toBe(1);   // s3
+
+    // Verify s2 was created as ON_LEAVE
+    expect(prisma.attendance.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: 's2',
+          status: AttendanceStatus.ON_LEAVE,
+        }),
+      }),
+    );
+
+    // Verify s3 was created as ABSENT
+    expect(prisma.attendance.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: 's3',
+          status: AttendanceStatus.ABSENT,
+          note: expect.stringContaining('Automatically marked absent'),
+        }),
+      }),
+    );
+  });
+});

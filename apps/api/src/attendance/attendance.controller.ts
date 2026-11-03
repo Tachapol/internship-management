@@ -187,4 +187,17 @@ export class AttendanceController {
   ) {
     return this.attendanceService.rejectAttendance(id, body?.note, user);
   }
+
+  @Post('process-absent')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MENTOR)
+  @ApiOperation({
+    summary: 'Trigger automated daily absent check',
+    description: 'Manually runs the daily cutoff to mark absent students who did not check in (Admin or Mentor only).',
+  })
+  @ApiResponse({ status: 200, description: 'Cutoff processed successfully.' })
+  async triggerDailyAbsent(
+    @Body('date') dateStr?: string,
+  ) {
+    return this.attendanceService.processDailyAbsent(dateStr);
+  }
 }

@@ -244,6 +244,11 @@ export const attendanceApi = {
     request<import("./types").Attendance>(`/attendance/${id}/approve`, { method: "PATCH", body: JSON.stringify({ note }) }),
   reject: (id: string, note?: string) =>
     request<import("./types").Attendance>(`/attendance/${id}/reject`, { method: "PATCH", body: JSON.stringify({ note }) }),
+  processAbsent: (date?: string) =>
+    request<{ date: string; totalActiveStudents: number; absentCreated: number; onLeaveCreated: number; alreadyRecorded: number }>("/attendance/process-absent", {
+      method: "POST",
+      body: JSON.stringify({ date }),
+    }),
 };
 
 // ─── Leave Requests ───────────────────────────────────────────
