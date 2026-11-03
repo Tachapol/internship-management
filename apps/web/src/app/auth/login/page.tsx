@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { BrandMark } from "../../../components/brand-mark";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../lib/auth-context";
@@ -75,14 +76,9 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-semibold text-text-primary">
-                Password
-              </label>
-              <a href="/auth/forgot-password" className="text-xs text-brand hover:underline font-medium">
-                Forgot password?
-              </a>
-            </div>
+            <label htmlFor="password" className="text-sm font-semibold text-text-primary">
+              Password
+            </label>
             <div className="relative">
               <input
                 id="password"
@@ -96,7 +92,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors cursor-pointer"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -106,7 +102,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full h-11 bg-brand hover:bg-brand-hover text-white font-semibold rounded-lg transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm mt-2"
+            className="w-full h-11 bg-brand hover:bg-brand-hover text-white font-semibold rounded-lg transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm mt-2 cursor-pointer"
           >
             {isLoading ? (
               <>
@@ -117,6 +113,15 @@ export default function LoginPage() {
               "Sign in"
             )}
           </button>
+
+          <div className="text-center pt-2">
+            <Link
+              href="/auth/forgot-password"
+              className="text-xs text-text-muted hover:text-brand font-medium transition-colors"
+            >
+              Forgot your password?
+            </Link>
+          </div>
         </form>
       </div>
     </div>
