@@ -114,12 +114,12 @@ export default function LoginPage() {
             )}
           </button>
 
-          <div className="text-center pt-2">
+          <div className="flex justify-end pt-1">
             <Link
               href="/auth/forgot-password"
-              className="text-xs text-text-muted hover:text-brand font-medium transition-colors"
+              className="text-xs text-brand hover:underline font-medium transition-colors"
             >
-              Forgot your password?
+              Forgot password?
             </Link>
           </div>
         </form>
